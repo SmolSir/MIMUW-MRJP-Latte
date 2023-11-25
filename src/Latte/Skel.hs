@@ -48,6 +48,7 @@ transStmt x = case x of
   Latte.Abs.Cond expr stmt -> failure x
   Latte.Abs.CondElse expr stmt1 stmt2 -> failure x
   Latte.Abs.While expr stmt -> failure x
+  Latte.Abs.For type_ ident expr stmt -> failure x
   Latte.Abs.SExp expr -> failure x
 
 transItem :: Latte.Abs.Item -> Result

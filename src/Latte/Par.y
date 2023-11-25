@@ -36,26 +36,28 @@ import Latte.Lex
   '-'       { PT _ (TS _ 11) }
   '--'      { PT _ (TS _ 12) }
   '/'       { PT _ (TS _ 13) }
-  ';'       { PT _ (TS _ 14) }
-  '<'       { PT _ (TS _ 15) }
-  '<='      { PT _ (TS _ 16) }
-  '='       { PT _ (TS _ 17) }
-  '=='      { PT _ (TS _ 18) }
-  '>'       { PT _ (TS _ 19) }
-  '>='      { PT _ (TS _ 20) }
-  'boolean' { PT _ (TS _ 21) }
-  'else'    { PT _ (TS _ 22) }
-  'false'   { PT _ (TS _ 23) }
-  'if'      { PT _ (TS _ 24) }
-  'int'     { PT _ (TS _ 25) }
-  'return'  { PT _ (TS _ 26) }
-  'string'  { PT _ (TS _ 27) }
-  'true'    { PT _ (TS _ 28) }
-  'void'    { PT _ (TS _ 29) }
-  'while'   { PT _ (TS _ 30) }
-  '{'       { PT _ (TS _ 31) }
-  '||'      { PT _ (TS _ 32) }
-  '}'       { PT _ (TS _ 33) }
+  ':'       { PT _ (TS _ 14) }
+  ';'       { PT _ (TS _ 15) }
+  '<'       { PT _ (TS _ 16) }
+  '<='      { PT _ (TS _ 17) }
+  '='       { PT _ (TS _ 18) }
+  '=='      { PT _ (TS _ 19) }
+  '>'       { PT _ (TS _ 20) }
+  '>='      { PT _ (TS _ 21) }
+  'boolean' { PT _ (TS _ 22) }
+  'else'    { PT _ (TS _ 23) }
+  'false'   { PT _ (TS _ 24) }
+  'for'     { PT _ (TS _ 25) }
+  'if'      { PT _ (TS _ 26) }
+  'int'     { PT _ (TS _ 27) }
+  'return'  { PT _ (TS _ 28) }
+  'string'  { PT _ (TS _ 29) }
+  'true'    { PT _ (TS _ 30) }
+  'void'    { PT _ (TS _ 31) }
+  'while'   { PT _ (TS _ 32) }
+  '{'       { PT _ (TS _ 33) }
+  '||'      { PT _ (TS _ 34) }
+  '}'       { PT _ (TS _ 35) }
   L_Ident   { PT _ (TV $$)   }
   L_integ   { PT _ (TI $$)   }
   L_quoted  { PT _ (TL $$)   }
@@ -109,6 +111,7 @@ Stmt
   | 'if' '(' Expr ')' Stmt { Latte.Abs.Cond $3 $5 }
   | 'if' '(' Expr ')' Stmt 'else' Stmt { Latte.Abs.CondElse $3 $5 $7 }
   | 'while' '(' Expr ')' Stmt { Latte.Abs.While $3 $5 }
+  | 'for' '(' Type Ident ':' Expr ')' Stmt { Latte.Abs.For $3 $4 $6 $8 }
   | Expr ';' { Latte.Abs.SExp $1 }
 
 Item :: { Latte.Abs.Item }
