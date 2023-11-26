@@ -1,6 +1,7 @@
 INCLUDE_DIRECTORIES = -ifrontend
 
 all:
+	$(MAKE) clean
 	ghc --make Main.hs $(INCLUDE_DIRECTORIES) -o latc
 
 clean:
