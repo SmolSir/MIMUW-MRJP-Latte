@@ -45,8 +45,9 @@ statementCheck (BStmt (Block statementList)) = do
                     where
                         errorMessage error =
                             error ++
-                            "in the following statement:\n" ++
-                            printTree statement
+                            " in the following statement:\n" ++
+                            printTree statement ++
+                            "\n"
 
 statementCheck (Decl declarationType declarationList) = do
     when (declarationType == Void) $ throwTCMonad "Cannot declare variables of type void"

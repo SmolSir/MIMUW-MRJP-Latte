@@ -29,4 +29,4 @@ runReturnsCheck = mapM_ topDefReturnCheck
             isValid <- returnCheck (BStmt block)
             if isValid
                 then return ()
-                else throwTCMonad $ "No return value in function `" ++ identifier ++ "`"
+                else throwTCMonad $ "No return value in function `" ++ identifier ++ "`\n"

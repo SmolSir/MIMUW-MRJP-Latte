@@ -29,7 +29,7 @@ matchExpressionTypeMessage :: TCType -> Expr -> TCMonad TCType
 matchExpressionTypeMessage expectedType expression =
     matchExpressionType expectedType expression `throwAdditionalMessage` errorMessage
     where
-        errorMessage error = error ++ "in the following expression:\n" ++ printTree expression
+        errorMessage error = error ++ " in the following expression:\n" ++ printTree expression
 
 ----------------------------
 -- helper check functions --
@@ -37,7 +37,7 @@ matchExpressionTypeMessage expectedType expression =
 statementExpressionCheck :: Expr -> TCMonad TCType
 statementExpressionCheck expression = expressionCheck expression `throwAdditionalMessage` errorMessage
     where
-        errorMessage error = error ++ "in the following expression:\n" ++ printTree expression
+        errorMessage error = error ++ " in the following expression:\n" ++ printTree expression
 
 argumentListCheck :: [TCType] -> [Expr] -> TCMonad ()
 argumentListCheck argumentList expressionList =

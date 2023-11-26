@@ -34,10 +34,10 @@ mainPresenceCheck :: TCMonad ()
 mainPresenceCheck = do
     typeMap <- asks typeMap
     case Map.lookup "main" typeMap of
-        Nothing                -> throwTCMonad $ "`main` function must be declared"
+        Nothing                -> throwTCMonad $ "`main` function must be declared \n"
         Just (TFun [] TInt, _) -> return ()
         Just (functionType, _) ->
-            throwTCMonad $ "`main` function must be of type `int`, but was declared `" ++ show functionType ++ "`"
+            throwTCMonad $ "`main` function must be of type int, but was declared " ++ show functionType
 
 functionDefinitionsCheck :: [TopDef] -> TCMonad TCEnvironment
 functionDefinitionsCheck  functionDefinitionList = do

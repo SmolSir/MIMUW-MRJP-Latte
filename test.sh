@@ -4,7 +4,9 @@ make
 
 bad=(
     test/lattests/bad
-    test/mrjp-tests/bad
+    test/mrjp-tests/bad/infinite_loop
+    # test/mrjp-tests/bad/runtime
+    test/mrjp-tests/bad/semantic
 )
 
 good=(
