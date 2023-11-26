@@ -34,7 +34,6 @@ data Stmt
     | Cond Expr Stmt
     | CondElse Expr Stmt Stmt
     | While Expr Stmt
-    | For Type Ident Expr Stmt
     | SExp Expr
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
