@@ -15,7 +15,10 @@ runReturnsCheck = mapM_ topDefReturnCheck
         returnCheck VRet    = return True
         returnCheck (CondElse ELitTrue  statementTrue _)              = returnCheck statementTrue
         returnCheck (CondElse ELitFalse _             statementFalse) = returnCheck statementFalse
-        returnCheck (CondElse _         statementTrue statementFalse) = (&&) <$> returnCheck statementTrue <*> returnCheck statementFalse
+        returnCheck (CondElse _         statementTrue statementFalse) = do
+            returnStatementTrue  <- returnCheck statementTrue
+            returnStatementFalse <- returnCheck statementFalse
+            return (returnStatementTrue && returnStatementFalse)
         returnCheck (Cond  ELitTrue statement) = returnCheck statement
         returnCheck (While ELitTrue statement) = returnCheck statement
         returnCheck (BStmt (Block statementList)) = foldM findReturn False statementList

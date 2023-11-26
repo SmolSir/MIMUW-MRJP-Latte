@@ -90,6 +90,4 @@ statementCheck (CondElse expression statementTrue statementFalse) =
 
 statementCheck (While expression statement) = conditionalCheck expression [statement]
 
-statementCheck (SExp expression) = do
-    _ <- statementExpressionCheck expression
-    ask
+statementCheck (SExp expression) = statementExpressionCheck expression >> ask

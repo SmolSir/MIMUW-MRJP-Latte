@@ -37,7 +37,7 @@ mainPresenceCheck = do
         Nothing                -> throwTCMonad $ "`main` function must be declared \n"
         Just (TFun [] TInt, _) -> return ()
         Just (functionType, _) ->
-            throwTCMonad $ "`main` function must be of type int, but was declared " ++ show functionType
+            throwTCMonad $ "`main` function must be of type int, but was declared " ++ show functionType ++ "\n"
 
 functionDefinitionsCheck :: [TopDef] -> TCMonad TCEnvironment
 functionDefinitionsCheck  functionDefinitionList = do
@@ -71,9 +71,9 @@ functionArgumentListCheck argumentList = do
             if tcType == TVoid
                 then
                     throwTCMonad $
-                    "Invalid function parameter of type `void`: `" ++
+                    "Invalid function parameter of type void: `" ++
                     identifier ++
-                    "`"
+                    "`\n"
                 else
                     return (identifier, (tcType, scope + 1))
         )

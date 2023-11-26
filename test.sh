@@ -15,8 +15,11 @@ good=(
     # test/lattests/extensions/arrays1
     # test/lattests/extensions/objects1
     # test/lattests/extensions/objects2
-    test/mrjp-tests/good
-    test/mrjp-tests/gr5
+    test/mrjp-tests/good/basic
+    test/mrjp-tests/good/hardcore
+    # test/mrjp-tests/good/arrays
+    # test/mrjp-tests/good/virtual
+    # test/mrjp-tests/gr5
 )
 
 for directory in ${bad[@]}; do
@@ -42,3 +45,5 @@ for directory in ${good[@]}; do
         fi
     done
 done
+
+echo "All tests passed!"

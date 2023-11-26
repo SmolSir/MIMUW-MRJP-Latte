@@ -30,7 +30,7 @@ data TCType = TInt | TString | TBool | TVoid | TFun [TCType] TCType deriving (Eq
 -- helper functions --
 ----------------------
 showTypeList :: Show a => [a] -> String
-showTypeList = intercalate ", " . List.map show
+showTypeList typeList = intercalate ", " (List.map show typeList)
 
 instance Show TCType where
     show TInt    = "int"
@@ -94,7 +94,7 @@ variableType :: Variable -> TCMonad TCType
 variableType variable = do
     typeScope <- variableTypeScope variable
     case typeScope of
-        Nothing          -> throwTCMonad $ "Usage of undeclared variable `" ++ variable ++ "`"
+        Nothing          -> throwTCMonad $ "Usage of undeclared variable `" ++ variable ++ "`\n"
         Just (tcType, _) -> return tcType
 
 --------------------------
@@ -107,4 +107,4 @@ nameAlreadyInScopeCheck variable = do
     case typeScope of
         Nothing -> return ()
         Just (_, variableScope) ->
-            when (currentScope == variableScope) $ throwTCMonad $ "Already declared variable `" ++ variable ++ "`"
+            when (currentScope == variableScope) $ throwTCMonad $ "Already declared variable `" ++ variable ++ "`\n"

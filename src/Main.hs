@@ -28,10 +28,7 @@ staticAnalysis input = do
                     hPutStrLn stderr errorMessage
                     exitFailure
                 Right _ -> do
-                    hPutStrLn stderr "OK"
-
-
-    putStrLn "Hello world!"
+                    hPutStrLn stderr "OK\n"
 
 main :: IO ()
 main = do
