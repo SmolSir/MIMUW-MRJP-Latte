@@ -47,6 +47,12 @@ convertTypeToTCType Void   = return TVoid
 convertTypeToTCType (Fun returnType argumentTypeList) =
     TFun <$> mapM convertTypeToTCType argumentTypeList <*> convertTypeToTCType returnType
 
+throwTCMonad :: String -> TCMonad a
+throwTCMonad = lift . throwE
+
+throwAdditionalMessage :: TCMonad a -> (String -> String) -> TCMonad a
+throwAdditionalMessage actual message = catchError actual (throwTCMonad . message)
+
 matchType :: [TCType] -> TCType -> TCMonad ()
 matchType [expectedType] actualType =
     when (expectedType /= actualType) $ throwTCMonad $ errorMessage
@@ -74,12 +80,6 @@ matchReturnType actualType = do
     ask
     where
         errorMessage error = "Invalid function return type: " ++ error
-
-throwTCMonad :: String -> TCMonad a
-throwTCMonad = lift . throwE
-
-throwAdditionalMessage :: TCMonad a -> (String -> String) -> TCMonad a
-throwAdditionalMessage actual message = catchError actual (throwTCMonad . message)
 
 ------------------------------
 -- variable check functions --

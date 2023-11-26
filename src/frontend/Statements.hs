@@ -10,6 +10,22 @@ import Latte.Print
 import Utils
 import Expressions
 
+
+----------------------
+-- helper functions --
+----------------------
+conditionalCheck :: Expr -> [Stmt] -> TCM TCEnvironment
+conditionalCheck expression [statement] =
+    matchExpressionType TBool expression >> statementCheck statement >> ask
+
+conditionalCheck expression [statementTrue, statementFalse] =
+    matchExpressionType TBool expression >> statementCheck statementTrue >> statementCheck statementFalse >> ask
+
+conditionalCheck _ _ = throwTCMonad "Invalid conditional statement"
+
+-------------------------------
+-- statement check functions --
+-------------------------------
 statementCheck :: Stmt -> TCMonad TCEnvironment
 statementCheck Empty = ask
 
@@ -47,7 +63,7 @@ statementCheck (Decl type declarationList) = do
             variable <- case declaration of
                 (NoInit (Ident identifier))            -> return identifier
                 (Init   (Ident identifier) expression) ->
-                    expressionTypeCheck tcType expression >> return identifier
+                    matchExpressionType tcType expression >> return identifier
             nameAlreadyInScopeCheck variable
             env <- ask
             let environmentAppendDeclared = Map.insert variable (tcType, scope env) (typeMap env)
@@ -55,7 +71,7 @@ statementCheck (Decl type declarationList) = do
 
 statementCheck (Ass identifier expression) = do
     tcType <- expressionCheck (EVar identifier)
-    expressionTypeCheck tcType expression
+    matchExpressionType tcType expression
     ask
 
 statementCheck (Incr identifier) = expressionCheck (EVar identifier) >>= matchType [TInt] >> ask
@@ -66,11 +82,12 @@ statementCheck (Ret expression) = matchReturnType =<< expressionCheck expression
 
 statementCheck (VRet) = matchReturnType TVoid
 
-statementCheck (Cond expression statement) = undefined
+statementCheck (Cond expression statement) = conditionalCheck expression [statement]
 
-statementCheck (CondElse expression statementTrue statementFalse) = undefined
+statementCheck (CondElse expression statementTrue statementFalse) =
+    conditionalCheck expression [statementTrue, statementFalse]
 
-statementCheck (While expression statement) = undefined
+statementCheck (While expression statement) = conditionalCheck expression [statement]
 
 statementCheck (SExp expression) = do
     _ <- expressionCheck expression
