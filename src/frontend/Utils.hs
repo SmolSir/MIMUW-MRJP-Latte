@@ -84,7 +84,7 @@ matchReturnType actualType = do
 
 matchExpressionType :: TCType -> Expr -> TCMonad TCType
 matchExpressionType expectedType expression = do
-    actualType <- expressionCheckMMM expression
+    actualType <- expressionCheck expression
     matchType [expectedType] actualType
     return actual `throwAdditionalMessage` errorMessage
     where
