@@ -16,10 +16,10 @@ import Expressions
 ----------------------
 conditionalCheck :: Expr -> [Stmt] -> TCM TCEnvironment
 conditionalCheck expression [statement] =
-    matchExpressionType TBool expression >> statementCheck statement >> ask
+    matchExpressionTypeMessage TBool expression >> statementCheck statement >> ask
 
 conditionalCheck expression [statementTrue, statementFalse] =
-    matchExpressionType TBool expression >> statementCheck statementTrue >> statementCheck statementFalse >> ask
+    matchExpressionTypeMessage TBool expression >> statementCheck statementTrue >> statementCheck statementFalse >> ask
 
 conditionalCheck _ _ = throwTCMonad "Invalid conditional statement"
 
@@ -63,22 +63,22 @@ statementCheck (Decl type declarationList) = do
             variable <- case declaration of
                 (NoInit (Ident identifier))            -> return identifier
                 (Init   (Ident identifier) expression) ->
-                    matchExpressionType tcType expression >> return identifier
+                    matchExpressionTypeMessage tcType expression >> return identifier
             nameAlreadyInScopeCheck variable
             env <- ask
             let environmentAppendDeclared = Map.insert variable (tcType, scope env) (typeMap env)
             return $ env { typeMap = environmentAppendDeclared }
 
 statementCheck (Ass identifier expression) = do
-    tcType <- expressionCheck (EVar identifier)
-    matchExpressionType tcType expression
+    tcType <- statementExpressionCheck (EVar identifier)
+    matchExpressionTypeMessage tcType expression
     ask
 
-statementCheck (Incr identifier) = expressionCheck (EVar identifier) >>= matchType [TInt] >> ask
+statementCheck (Incr identifier) = statementExpressionCheck (EVar identifier) >>= matchType [TInt] >> ask
 
-statementCheck (Decr identifier) = expressionCheck (EVar identifier) >>= matchType [TInt] >> ask
+statementCheck (Decr identifier) = statementExpressionCheck (EVar identifier) >>= matchType [TInt] >> ask
 
-statementCheck (Ret expression) = matchReturnType =<< expressionCheck expression
+statementCheck (Ret expression) = matchReturnType =<< statementExpressionCheck expression
 
 statementCheck (VRet) = matchReturnType TVoid
 
@@ -90,5 +90,5 @@ statementCheck (CondElse expression statementTrue statementFalse) =
 statementCheck (While expression statement) = conditionalCheck expression [statement]
 
 statementCheck (SExp expression) = do
-    _ <- expressionCheck expression
+    _ <- statementExpressionCheck expression
     ask

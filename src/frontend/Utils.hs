@@ -86,7 +86,11 @@ matchExpressionType :: TCType -> Expr -> TCMonad TCType
 matchExpressionType expectedType expression = do
     actualType <- expressionCheck expression
     matchType [expectedType] actualType
-    return actual `throwAdditionalMessage` errorMessage
+    return actual
+
+matchExpressionTypeMessage :: TCType -> Expr -> TCMonad TCType
+matchExpressionTypeMessage expectedType expression =
+    matchExpressionType expectedType expression `throwAdditionalMessage` errorMessage
     where
         errorMessage error = error ++ "in the following expression:\n" ++ printTree expression
 
