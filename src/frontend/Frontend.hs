@@ -25,8 +25,6 @@ saveTopDefTypes environment topDef = local (const environment) $ saveTopDef topD
             environment <- ask
             return $ environment { typeMap = Map.insert identifier (tcType, 0) (typeMap environment) }
 
-
-
 ---------------------
 -- check functions --
 ---------------------

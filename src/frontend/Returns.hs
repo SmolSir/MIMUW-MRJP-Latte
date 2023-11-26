@@ -7,6 +7,7 @@ import Utils
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
 
+
 runReturnsCheck :: [TopDef] -> TCMonad ()
 runReturnsCheck = mapM_ topDefReturnCheck
     where
