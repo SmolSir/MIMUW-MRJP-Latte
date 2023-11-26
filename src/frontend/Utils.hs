@@ -30,7 +30,7 @@ data TCType = TInt | TString | TBool | TVoid | TFun [TCType] TCType deriving (Eq
 -- helper functions --
 ----------------------
 showTypeList :: Show a => [a] -> String
-showTypeList = intercalate ", " . map show
+showTypeList = intercalate ", " . List.map show
 
 instance Show TCType where
     show TInt    = "int"
@@ -41,10 +41,10 @@ instance Show TCType where
         "(" ++ showTypeList argumentTypeList ++ ") -> " ++ show returnType
 
 convertTypeToTCType :: Type -> TCMonad TCType
-convertTypeToTCType Int    = return TInt
-convertTypeToTCType String = return TString
-convertTypeToTCType Bool   = return TBool
-convertTypeToTCType Void   = return TVoid
+convertTypeToTCType Int  = return TInt
+convertTypeToTCType Str  = return TString
+convertTypeToTCType Bool = return TBool
+convertTypeToTCType Void = return TVoid
 convertTypeToTCType (Fun returnType argumentTypeList) =
     TFun <$> mapM convertTypeToTCType argumentTypeList <*> convertTypeToTCType returnType
 
@@ -72,7 +72,7 @@ matchType expectedTypeList actualType =
             " but the actual type was: " ++
             show actualType
 
-matchReturnType :: TCType -> TCMonad ()
+matchReturnType :: TCType -> TCMonad TCEnvironment
 matchReturnType actualType = do
     expectedType <- asks expectedReturnType
     case expectedType of
@@ -81,18 +81,6 @@ matchReturnType actualType = do
     ask
     where
         errorMessage error = "Invalid function return type: " ++ error
-
-matchExpressionType :: TCType -> Expr -> TCMonad TCType
-matchExpressionType expectedType expression = do
-    actualType <- expressionCheck expression
-    matchType [expectedType] actualType
-    return actual
-
-matchExpressionTypeMessage :: TCType -> Expr -> TCMonad TCType
-matchExpressionTypeMessage expectedType expression =
-    matchExpressionType expectedType expression `throwAdditionalMessage` errorMessage
-    where
-        errorMessage error = error ++ "in the following expression:\n" ++ printTree expression
 
 ------------------------------
 -- variable check functions --
@@ -106,8 +94,8 @@ variableType :: Variable -> TCMonad TCType
 variableType variable = do
     typeScope <- variableTypeScope variable
     case typeScope of
-        Nothing        -> throwTCMonad $ "Usage of undeclared variable `" ++ variable ++ "`"
-        Just (type, _) -> return type
+        Nothing          -> throwTCMonad $ "Usage of undeclared variable `" ++ variable ++ "`"
+        Just (tcType, _) -> return tcType
 
 --------------------------
 -- name check functions --

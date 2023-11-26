@@ -1,6 +1,8 @@
+INCLUDE_DIRECTORIES = -ifrontend
+
 all:
-	ghc --make Main.hs -o latc
+	ghc --make Main.hs $(INCLUDE_DIRECTORIES) -o latc
 
 clean:
 	rm -f latc *.hi *.o *.log *.aux *.dvi
-	rm -f Latte/*.hi Latte/*.o
+	rm -f frontend/*.hi frontend/*.o Latte/*.hi Latte/*.o

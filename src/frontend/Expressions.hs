@@ -1,4 +1,9 @@
-module Expressions (expressionCheck) where
+module Expressions (
+    expressionCheck,
+    statementExpressionCheck,
+    matchExpressionType,
+    matchExpressionTypeMessage
+) where
 
 import Data.Map as Map
 
@@ -11,9 +16,24 @@ import Latte.Print
 import Utils
 
 
-----------------------
--- helper functions --
-----------------------
+----------------------------
+-- helper match functions --
+----------------------------
+matchExpressionType :: TCType -> Expr -> TCMonad TCType
+matchExpressionType expectedType expression = do
+    actualType <- expressionCheck expression
+    matchType [expectedType] actualType
+    return actualType
+
+matchExpressionTypeMessage :: TCType -> Expr -> TCMonad TCType
+matchExpressionTypeMessage expectedType expression =
+    matchExpressionType expectedType expression `throwAdditionalMessage` errorMessage
+    where
+        errorMessage error = error ++ "in the following expression:\n" ++ printTree expression
+
+----------------------------
+-- helper check functions --
+----------------------------
 statementExpressionCheck :: Expr -> TCMonad TCType
 statementExpressionCheck expression = expressionCheck expression `throwAdditionalMessage` errorMessage
     where
@@ -27,8 +47,8 @@ argumentListCheck argumentList expressionList =
         else
             throwTCMonad "Invalid number of arguments for the called function"
         where
-            argumentCheck :: (TCType, Expr) -> TCMonad ()
-            argumentCheck tcType expression = matchExpressionType tcType expression
+            argumentCheck :: (TCType, Expr) -> TCMonad TCType
+            argumentCheck (tcType, expression) = matchExpressionType tcType expression
 
 operatorCheck :: [TCType] -> Expr -> Expr -> TCMonad TCType
 operatorCheck tcTypeList expressionL expressionR = do
@@ -51,15 +71,15 @@ expressionCheck (ELitTrue) = return TBool
 expressionCheck (ELitFalse) = return TBool
 
 expressionCheck (EApp (Ident identifier) expressionList) = do
-    typeScope <- variableType variable
+    typeScope <- variableType identifier
     case typeScope of
         TFun argumentList returnType -> do
             argumentListCheck argumentList expressionList
             return returnType
         _ -> do
-            throwTCMonad (variable ++ " is not a function")
+            throwTCMonad (identifier ++ " is not a function")
 
-expressionCheck (EString) = return TString
+expressionCheck (EString _) = return TString
 
 expressionCheck (Neg expression) = matchExpressionType TInt expression
 

@@ -21,9 +21,9 @@ saveTopDefTypes environment topDef = local (const environment) $ saveTopDef topD
         saveTopDef :: TopDef -> TCMonad TCEnvironment
         saveTopDef (FnDef returnType (Ident identifier) argumentList _) = do
             nameAlreadyInScopeCheck identifier
-            tcType      <- convertTypeToTCType $ Fun returnType (map (\(Arg type _) -> type) argumentList)
+            tcType      <- convertTypeToTCType $ Fun returnType (List.map (\(Arg argumentType _) -> argumentType) argumentList)
             environment <- ask
-            return $ env { typeMap = Map.insert identifier (tcType, 0) (typeMap environment) }
+            return $ environment { typeMap = Map.insert identifier (tcType, 0) (typeMap environment) }
 
 
 
@@ -36,8 +36,8 @@ mainPresenceCheck = do
     case Map.lookup "main" typeMap of
         Nothing                -> throwTCMonad $ "`main` function must be declared"
         Just (TFun [] TInt, _) -> return ()
-        Just (type,         _) ->
-            throwTCMonad $ "`main` function must be of type `int`, but was declared `" ++ show type ++ "`"
+        Just (functionType, _) ->
+            throwTCMonad $ "`main` function must be of type `int`, but was declared `" ++ show functionType ++ "`"
 
 functionDefinitionsCheck :: [TopDef] -> TCMonad TCEnvironment
 functionDefinitionsCheck  functionDefinitionList = do
@@ -54,7 +54,7 @@ functionDefinitionsCheck  functionDefinitionList = do
             environment     <- ask
             argumentTypeMap <- functionArgumentListCheck argumentList
             let env = environment {
-                typeMap            = union argumentTypeMap (typeMap environment),
+                typeMap            = Map.union argumentTypeMap (typeMap environment),
                 expectedReturnType = Just tcReturnType
             }
             local (const env) $ statementCheck (BStmt block) `throwAdditionalMessage` errorMessage
@@ -66,8 +66,8 @@ functionArgumentListCheck :: [Arg] -> TCMonad TypeMap
 functionArgumentListCheck argumentList = do
     scope    <- asks scope
     typeList <- mapM (
-        \(Arg type (Ident identifier)) -> do
-            tcType <- convertTypeToTCType type
+        \(Arg argumentType (Ident identifier)) -> do
+            tcType <- convertTypeToTCType argumentType
             if tcType == TVoid
                 then
                     throwTCMonad $
@@ -89,7 +89,7 @@ functionArgumentListCheck argumentList = do
 -- run functions --
 -------------------
 runStaticAnalysis (Program prog) =
-    runReaderT (parseTopDefList prog) $ TCEnvironment predefinedFunctionList Map.empty 0 Nothing
+    runReaderT (parseTopDefList prog) $ TCEnvironment predefinedFunctionList 0 Nothing
     where
         predefinedFunctionList :: Map.Map Variable (TCType, Scope)
         predefinedFunctionList = Map.fromList [
@@ -97,8 +97,7 @@ runStaticAnalysis (Program prog) =
             ("readInt"    , (TFun []        TInt,    0)),
             ("readString" , (TFun []        TString, 0)),
             ("printInt"   , (TFun [TInt]    TVoid,   0)),
-            ("printString", (TFun [TString] TVoid,   0)),
-        ]
+            ("printString", (TFun [TString] TVoid,   0))]
 
         parseTopDefList :: [TopDef] -> TCMonad TCEnvironment
         parseTopDefList topDefList = do

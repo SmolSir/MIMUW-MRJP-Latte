@@ -21,7 +21,7 @@ staticAnalysis input = do
             hPutStrLn stderr input
             exitFailure
         Ok programTree -> do
-            staticAnalysisResult <- runExceptT (runStaticAnalysis tree)
+            staticAnalysisResult <- runExceptT (runStaticAnalysis programTree)
             case staticAnalysisResult of
                 Left errorMessage -> do
                     hPutStrLn stderr "Error: static analysis exception"

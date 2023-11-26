@@ -14,7 +14,7 @@ import Expressions
 ----------------------
 -- helper functions --
 ----------------------
-conditionalCheck :: Expr -> [Stmt] -> TCM TCEnvironment
+conditionalCheck :: Expr -> [Stmt] -> TCMonad TCEnvironment
 conditionalCheck expression [statement] =
     matchExpressionTypeMessage TBool expression >> statementCheck statement >> ask
 
@@ -48,14 +48,14 @@ statementCheck (BStmt (Block statementList)) = do
                             "in the following statement:\n" ++
                             printTree statement
 
-statementCheck (Decl type declarationList) = do
-    when (type == Void) $ throwTCMonad "Cannot declare variables of type void"
+statementCheck (Decl declarationType declarationList) = do
+    when (declarationType == Void) $ throwTCMonad "Cannot declare variables of type void"
     environment <- ask
     foldM foldFunction environment declarationList
     where
-        foldFunction :: TCEnvironment -> Item TCMonad TCEnvironment
+        foldFunction :: TCEnvironment -> Item -> TCMonad TCEnvironment
         foldFunction accumulator declaration = do
-            tcType <- convertTypeToTCType type
+            tcType <- convertTypeToTCType declarationType
             local (const accumulator) $ declarationCheck tcType declaration
 
         declarationCheck :: TCType -> Item -> TCMonad TCEnvironment
