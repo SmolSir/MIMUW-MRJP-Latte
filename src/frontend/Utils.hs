@@ -8,6 +8,7 @@ import Control.Monad.Except
 import Control.Monad.Trans.Except
 
 import Latte.Abs
+import Latte.Print
 
 ------------------
 -- types & data --
@@ -80,6 +81,14 @@ matchReturnType actualType = do
     ask
     where
         errorMessage error = "Invalid function return type: " ++ error
+
+matchExpressionType :: TCType -> Expr -> TCMonad TCType
+matchExpressionType expectedType expression = do
+    actualType <- expressionCheckMMM expression
+    matchType [expectedType] actualType
+    return actual `throwAdditionalMessage` errorMessage
+    where
+        errorMessage error = error ++ "in the following expression:\n" ++ printTree expression
 
 ------------------------------
 -- variable check functions --
