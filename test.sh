@@ -4,6 +4,7 @@ make
 
 bad=(
     test/lattests/bad
+    test/mrjp-tests/bad
 )
 
 good=(
@@ -12,6 +13,8 @@ good=(
     # test/lattests/extensions/arrays1
     # test/lattests/extensions/objects1
     # test/lattests/extensions/objects2
+    test/mrjp-tests/good
+    test/mrjp-tests/gr5
 )
 
 for directory in ${bad[@]}; do
