@@ -7,5 +7,5 @@
 solution
 latc_x86
 test/*
-test/*.out
+test.out
 !test/*.*
