@@ -4,7 +4,7 @@ gcc -c -m32 lib/runtime.c -o lib/runtime.o
 make
 
 bad=(
-    # test/lattests/bad
+    test/lattests/bad
     # test/mrjp-tests/bad/infinite_loop
     # test/mrjp-tests/bad/runtime
     # test/mrjp-tests/bad/semantic
@@ -16,7 +16,7 @@ good=(
     # test/lattests/extensions/arrays1
     # test/lattests/extensions/objects1
     # test/lattests/extensions/objects2
-    # test/mrjp-tests/good/basic
+    test/mrjp-tests/good/basic
     # test/mrjp-tests/good/hardcore
     # test/mrjp-tests/good/arrays
     # test/mrjp-tests/good/virtual
@@ -46,7 +46,7 @@ for directory in ${good[@]}; do
         fi
 
         # compile
-        gcc -m32 lib/runtime.o ${file%.*}.s -o ${file%.*}
+        gcc -m32 -z execstack lib/runtime.o ${file%.*}.s -o ${file%.*}
 
         # run with input if present
         if [ -f ${file%.*}.input ]; then
