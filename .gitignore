@@ -1,7 +1,11 @@
 *.hi
 *.o
+!runtime.o
 *.s
 *.txt
 *.tar.gz
 solution
 latc_x86
+test/*
+test/*.out
+!test/*.*

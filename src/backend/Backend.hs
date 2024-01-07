@@ -297,7 +297,7 @@ translateExpression (EMul expressionL Mod expressionR) =
 translateExpression (EAdd expressionL operator expressionR) = do
     expressionTypeL <- getExpressionType expressionL
     case expressionTypeL of
-        Str -> translateExpression (EApp (Ident "concatenateStrings") [expressionL, expressionR])
+        Str -> translateExpression (EApp (Ident "concatString") [expressionL, expressionR])
         _   -> do
             let operatorKind = case operator of
                     Plus  -> ADD
@@ -637,11 +637,14 @@ runCompiler (Program prog) =
 
         predefinedFunctionMap :: Map.Map Variable Type
         predefinedFunctionMap = Map.fromList [
-            ("error"      , Void),
-            ("readInt"    , Int ),
-            ("readString" , Str ),
-            ("printInt"   , Void),
-            ("printString", Void)]
+            ("error"        , Void),
+            ("readInt"      , Int ),
+            ("readString"   , Str ),
+            ("printInt"     , Void),
+            ("printString"  , Void),
+            ("concatString" , Str ),
+            ("compareString", Int )
+            ]
 
 generateExpressionList :: [TopDef] -> CMonad InstructionPrepend
 generateExpressionList topDefList = do
