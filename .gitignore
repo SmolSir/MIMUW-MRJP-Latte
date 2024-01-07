@@ -1,5 +1,6 @@
 *.hi
 *.o
+*.s
 *.txt
 *.tar.gz
 solution
