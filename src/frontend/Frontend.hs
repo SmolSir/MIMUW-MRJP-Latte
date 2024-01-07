@@ -91,11 +91,13 @@ runStaticAnalysis (Program prog) =
     where
         predefinedFunctionList :: Map.Map Variable (TCType, Scope)
         predefinedFunctionList = Map.fromList [
-            ("error"      , (TFun []        TVoid,   0)),
-            ("readInt"    , (TFun []        TInt,    0)),
-            ("readString" , (TFun []        TString, 0)),
-            ("printInt"   , (TFun [TInt]    TVoid,   0)),
-            ("printString", (TFun [TString] TVoid,   0))]
+            ("error"        , (TFun []                 TVoid  , 0)),
+            ("readInt"      , (TFun []                 TInt   , 0)),
+            ("readString"   , (TFun []                 TString, 0)),
+            ("printInt"     , (TFun [TInt]             TVoid  , 0)),
+            ("printString"  , (TFun [TString]          TVoid  , 0)),
+            ("concatString" , (TFun [TString, TString] TString, 0)),
+            ("compareString", (TFun [TString, TString] TInt   , 0))]
 
         parseTopDefList :: [TopDef] -> TCMonad TCEnvironment
         parseTopDefList topDefList = do

@@ -114,8 +114,8 @@ instance Show UnaryOperator where
     show NEG = "neg" ++ " "
 
 instance Show Label where
-    show (FunctionLabel function)   = function
-    show (JumpLabel     jump)       = ".L"  ++ show jump
+    show (FunctionLabel function  ) = function
+    show (JumpLabel     jump      ) = ".L"  ++ show jump
     show (StringLabel   string   _) = ".LC" ++ show string
 
 instance Show Instruction where
@@ -181,12 +181,12 @@ getFreeLabel = do
 
 getStringLabel :: String -> CMonad Integer
 getStringLabel string = do
-    stringMap <- gets stringMap
-    case Map.lookup string stringMap of
+    strMap <- gets stringMap
+    case Map.lookup string strMap of
         Nothing -> do
-            let label = fromIntegral $ Map.size stringMap
+            let label = fromIntegral $ Map.size strMap
             modify (\state -> state {
-                stringMap = Map.insert string (StringLabel label string) stringMap
+                stringMap = Map.insert string (StringLabel label string) strMap
             })
             return label
         Just (StringLabel label string) -> return label
@@ -613,7 +613,7 @@ translateTopDef topDef = case topDef of
 
         state <- get
         return
-            $ instructionListMerge [LABEL $ FunctionLabel identifier, ENTRY, STACK_ALLOCATION $ localsCount state]
+            $ instructionListMerge [LABEL $ FunctionLabel identifier, HEADER, STACK_ALLOCATION $ localsCount state]
             . code
             . instructionListMerge [LABEL $ FunctionLabel $ returnLabel state, FOOTER, ZERO_INSTRUCTION RET]
 
@@ -649,9 +649,9 @@ runCompiler (Program prog) =
 generateExpressionList :: [TopDef] -> CMonad InstructionPrepend
 generateExpressionList topDefList = do
     generatedCode <- foldM go id topDefList
-    stringMap     <- gets stringMap
-    let stringLabelList = List.map LABEL $ Map.elems stringMap
-    return $ instructionListAdd HEADER . instructionListMerge stringLabelList . generatedCode
+    strMap        <- gets stringMap
+    let stringLabelList = List.map LABEL $ Map.elems strMap
+    return $ instructionListAdd ENTRY . instructionListMerge stringLabelList . generatedCode
     where
         go accumulatedCode statement = do
             generatedCode <- translateTopDef statement
