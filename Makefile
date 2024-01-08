@@ -16,6 +16,7 @@ zip:
 	mkdir ${ZIP_SOURCE}/lib
 	cp README.md ${ZIP_SOURCE}/
 	cp Makefile ${ZIP_SOURCE}/
+	cp latc_x86 ${ZIP_SOURCE}/
 	cp -r src ${ZIP_SOURCE}/
 	cp lib/runtime.o ${ZIP_SOURCE}/lib/
 	tar -czvf ${ZIP_TARGET} -C ${ZIP_SOURCE} .
