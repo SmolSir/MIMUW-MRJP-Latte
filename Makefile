@@ -4,10 +4,10 @@ ZIP_TARGET := bs429594-Latte.tar.gz
 all:
 	$(MAKE) clean
 	$(MAKE) -C src all
-	cp src/latc_x86 .
+	cp src/latc .
 
 clean:
-	rm -rf latc_x86 ${ZIP_SOURCE} ${ZIP_TARGET}
+	rm -rf latc ${ZIP_SOURCE} ${ZIP_TARGET}
 	$(MAKE) -C src clean
 
 zip:

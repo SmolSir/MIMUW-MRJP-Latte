@@ -26,7 +26,7 @@ good=(
 for directory in ${bad[@]}; do
     for file in $directory/*.lat; do
         echo "Testing $file"
-        ./latc_x86 $file
+        ./latc $file
         exit_code=$?
         if [ $exit_code -eq 0 ]; then
             echo "Test $file failed"
@@ -38,7 +38,7 @@ done
 for directory in ${good[@]}; do
     for file in $directory/*.lat; do
         echo "Testing $file"
-        ./latc_x86 $file
+        ./latc $file
         exit_code=$?
         if [ $exit_code -ne 0 ]; then
             echo "Test $file failed"
