@@ -594,28 +594,35 @@ translateStatement (SExp expression) = do
 -- others --
 ------------
 translateTopDef :: TopDef -> CMonad InstructionPrepend
-translateTopDef topDef = case topDef of
-    FnDef returnType (Ident identifier) argumentList block -> do
-        modify (\state -> state {
-            localsCount           = 0,
-            returnLabel           = "ret_" ++ identifier,
-            functionReturnTypeMap = Map.insert identifier returnType $ functionReturnTypeMap state
+translateTopDef (FnDef returnType (Ident identifier) argumentList block) = do
+    modify (\state -> state {
+        localsCount           = 0,
+        returnLabel           = "ret_" ++ identifier,
+        functionReturnTypeMap = Map.insert identifier returnType $ functionReturnTypeMap state
+    })
+
+    (_, code) <- local
+        (\environment -> environment {
+            varaibleMap = Map.fromList $ zipWith
+                (\(Arg argumentType (Ident argumentIdentifier)) argumentValue -> (argumentIdentifier, (Parameter argumentValue, argumentType)))
+                argumentList
+                [1 ..]
         })
+        (translateStatement (BStmt block))
 
-        (_, code) <- local
-            (\environment -> environment {
-                varaibleMap = Map.fromList $ zipWith
-                    (\(Arg argumentType (Ident argumentIdentifier)) argumentValue -> (argumentIdentifier, (Parameter argumentValue, argumentType)))
-                    argumentList
-                    [1 ..]
-            })
-            (translateStatement (BStmt block))
-
-        state <- get
-        return
-            $ instructionListMerge [LABEL $ FunctionLabel identifier, HEADER, STACK_ALLOCATION $ localsCount state]
-            . code
-            . instructionListMerge [LABEL $ FunctionLabel $ returnLabel state, FOOTER, ZERO_INSTRUCTION RET]
+    state <- get
+    return
+        $ instructionListMerge [
+            LABEL $ FunctionLabel identifier,
+            HEADER,
+            STACK_ALLOCATION $ localsCount state
+            ]
+        . code
+        . instructionListMerge [
+            LABEL $ FunctionLabel $ returnLabel state,
+            FOOTER,
+            ZERO_INSTRUCTION RET
+            ]
 
 translateBinaryOperator :: [Instruction] -> Operand -> InstructionPrepend
 translateBinaryOperator operatorList resultRegisterOperand =
