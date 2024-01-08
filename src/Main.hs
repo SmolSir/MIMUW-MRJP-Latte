@@ -50,7 +50,6 @@ main = do
     programArguments <- getArgs
     case programArguments of
         [file] -> readFile file >>= staticAnalysis >>= writeCodeToFile file
-        -- []     -> getContents >>= staticAnalysis
         _      -> do
             putStrLn "Correct usage: ./latc <file>"
             exitFailure

@@ -5,7 +5,7 @@
 *.txt
 *.tar.gz
 solution
-latc_x86
+latc
 test/*
 test.out
 !test/*.*
