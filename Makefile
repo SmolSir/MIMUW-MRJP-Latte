@@ -18,5 +18,5 @@ zip:
 	cp Makefile ${ZIP_SOURCE}/
 	cp latc_x86 ${ZIP_SOURCE}/
 	cp -r src ${ZIP_SOURCE}/
-	cp lib/runtime.o ${ZIP_SOURCE}/lib/
+	cp -r lib ${ZIP_SOURCE}/
 	tar -czvf ${ZIP_TARGET} -C ${ZIP_SOURCE} .
