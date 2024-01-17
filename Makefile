@@ -13,7 +13,10 @@ clean:
 zip:
 	$(MAKE) clean
 	mkdir ${ZIP_SOURCE}
+	mkdir ${ZIP_SOURCE}/lib
 	cp README.md ${ZIP_SOURCE}/
 	cp Makefile ${ZIP_SOURCE}/
+	cp latc_x86 ${ZIP_SOURCE}/
 	cp -r src ${ZIP_SOURCE}/
+	cp -r lib ${ZIP_SOURCE}/
 	tar -czvf ${ZIP_TARGET} -C ${ZIP_SOURCE} .

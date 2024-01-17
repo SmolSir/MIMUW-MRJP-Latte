@@ -1,0 +1,4 @@
+#!/bin/bash
+
+./latc $@
+gcc -m32 -z execstack lib/runtime.o "${@%.*}.s" -o ${@%.*}

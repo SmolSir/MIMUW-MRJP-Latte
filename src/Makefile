@@ -1,4 +1,4 @@
-INCLUDE_DIRECTORIES = -ifrontend
+INCLUDE_DIRECTORIES = -ifrontend:backend
 
 all:
 	$(MAKE) clean
@@ -6,4 +6,4 @@ all:
 
 clean:
 	rm -f latc *.hi *.o *.log *.aux *.dvi
-	rm -f frontend/*.hi frontend/*.o Latte/*.hi Latte/*.o
+	rm -f frontend/*.hi frontend/*.o backend/*.hi backend/*.o Latte/*.hi Latte/*.o

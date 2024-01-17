@@ -1,6 +1,11 @@
 *.hi
 *.o
+!runtime.o
+*.s
 *.txt
 *.tar.gz
 solution
 latc
+test/*
+test.out
+!test/*.*
