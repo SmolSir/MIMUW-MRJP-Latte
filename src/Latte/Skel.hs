@@ -26,6 +26,17 @@ transProgram x = case x of
 transTopDef :: Latte.Abs.TopDef -> Result
 transTopDef x = case x of
   Latte.Abs.FnDef type_ ident args block -> failure x
+  Latte.Abs.ClsDef ident clsext clsmems -> failure x
+
+transClsExt :: Latte.Abs.ClsExt -> Result
+transClsExt x = case x of
+  Latte.Abs.NoExt -> failure x
+  Latte.Abs.Ext ident -> failure x
+
+transClsMem :: Latte.Abs.ClsMem -> Result
+transClsMem x = case x of
+  Latte.Abs.Attr type_ ident -> failure x
+  Latte.Abs.Meth type_ ident args block -> failure x
 
 transArg :: Latte.Abs.Arg -> Result
 transArg x = case x of
@@ -40,14 +51,15 @@ transStmt x = case x of
   Latte.Abs.Empty -> failure x
   Latte.Abs.BStmt block -> failure x
   Latte.Abs.Decl type_ items -> failure x
-  Latte.Abs.Ass ident expr -> failure x
-  Latte.Abs.Incr ident -> failure x
-  Latte.Abs.Decr ident -> failure x
+  Latte.Abs.Ass expr1 expr2 -> failure x
+  Latte.Abs.Incr expr -> failure x
+  Latte.Abs.Decr expr -> failure x
   Latte.Abs.Ret expr -> failure x
   Latte.Abs.VRet -> failure x
   Latte.Abs.Cond expr stmt -> failure x
   Latte.Abs.CondElse expr stmt1 stmt2 -> failure x
   Latte.Abs.While expr stmt -> failure x
+  Latte.Abs.For type_ ident expr stmt -> failure x
   Latte.Abs.SExp expr -> failure x
 
 transItem :: Latte.Abs.Item -> Result
@@ -61,15 +73,22 @@ transType x = case x of
   Latte.Abs.Str -> failure x
   Latte.Abs.Bool -> failure x
   Latte.Abs.Void -> failure x
+  Latte.Abs.Arr type_ -> failure x
+  Latte.Abs.Cls ident -> failure x
   Latte.Abs.Fun type_ types -> failure x
 
 transExpr :: Latte.Abs.Expr -> Result
 transExpr x = case x of
   Latte.Abs.EVar ident -> failure x
+  Latte.Abs.EArr expr1 expr2 -> failure x
+  Latte.Abs.EAttr expr ident -> failure x
+  Latte.Abs.EApp ident exprs -> failure x
+  Latte.Abs.EMeth expr ident exprs -> failure x
+  Latte.Abs.ENew type_ earrlen -> failure x
+  Latte.Abs.ENullCast type_ -> failure x
   Latte.Abs.ELitInt integer -> failure x
   Latte.Abs.ELitTrue -> failure x
   Latte.Abs.ELitFalse -> failure x
-  Latte.Abs.EApp ident exprs -> failure x
   Latte.Abs.EString string -> failure x
   Latte.Abs.Neg expr -> failure x
   Latte.Abs.Not expr -> failure x
@@ -78,6 +97,11 @@ transExpr x = case x of
   Latte.Abs.ERel expr1 relop expr2 -> failure x
   Latte.Abs.EAnd expr1 expr2 -> failure x
   Latte.Abs.EOr expr1 expr2 -> failure x
+
+transEArrLen :: Latte.Abs.EArrLen -> Result
+transEArrLen x = case x of
+  Latte.Abs.EArrLen expr -> failure x
+  Latte.Abs.EClsLen -> failure x
 
 transAddOp :: Latte.Abs.AddOp -> Result
 transAddOp x = case x of

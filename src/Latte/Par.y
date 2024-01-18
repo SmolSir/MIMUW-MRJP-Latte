@@ -29,33 +29,43 @@ import Latte.Lex
   '&&'      { PT _ (TS _ 4)  }
   '('       { PT _ (TS _ 5)  }
   ')'       { PT _ (TS _ 6)  }
-  '*'       { PT _ (TS _ 7)  }
-  '+'       { PT _ (TS _ 8)  }
-  '++'      { PT _ (TS _ 9)  }
-  ','       { PT _ (TS _ 10) }
-  '-'       { PT _ (TS _ 11) }
-  '--'      { PT _ (TS _ 12) }
-  '/'       { PT _ (TS _ 13) }
-  ';'       { PT _ (TS _ 14) }
-  '<'       { PT _ (TS _ 15) }
-  '<='      { PT _ (TS _ 16) }
-  '='       { PT _ (TS _ 17) }
-  '=='      { PT _ (TS _ 18) }
-  '>'       { PT _ (TS _ 19) }
-  '>='      { PT _ (TS _ 20) }
-  'boolean' { PT _ (TS _ 21) }
-  'else'    { PT _ (TS _ 22) }
-  'false'   { PT _ (TS _ 23) }
-  'if'      { PT _ (TS _ 24) }
-  'int'     { PT _ (TS _ 25) }
-  'return'  { PT _ (TS _ 26) }
-  'string'  { PT _ (TS _ 27) }
-  'true'    { PT _ (TS _ 28) }
-  'void'    { PT _ (TS _ 29) }
-  'while'   { PT _ (TS _ 30) }
-  '{'       { PT _ (TS _ 31) }
-  '||'      { PT _ (TS _ 32) }
-  '}'       { PT _ (TS _ 33) }
+  ')null'   { PT _ (TS _ 7)  }
+  '*'       { PT _ (TS _ 8)  }
+  '+'       { PT _ (TS _ 9)  }
+  '++'      { PT _ (TS _ 10) }
+  ','       { PT _ (TS _ 11) }
+  '-'       { PT _ (TS _ 12) }
+  '--'      { PT _ (TS _ 13) }
+  '.'       { PT _ (TS _ 14) }
+  '/'       { PT _ (TS _ 15) }
+  ':'       { PT _ (TS _ 16) }
+  ';'       { PT _ (TS _ 17) }
+  '<'       { PT _ (TS _ 18) }
+  '<='      { PT _ (TS _ 19) }
+  '='       { PT _ (TS _ 20) }
+  '=='      { PT _ (TS _ 21) }
+  '>'       { PT _ (TS _ 22) }
+  '>='      { PT _ (TS _ 23) }
+  '['       { PT _ (TS _ 24) }
+  '[]'      { PT _ (TS _ 25) }
+  ']'       { PT _ (TS _ 26) }
+  'boolean' { PT _ (TS _ 27) }
+  'class'   { PT _ (TS _ 28) }
+  'else'    { PT _ (TS _ 29) }
+  'extends' { PT _ (TS _ 30) }
+  'false'   { PT _ (TS _ 31) }
+  'for'     { PT _ (TS _ 32) }
+  'if'      { PT _ (TS _ 33) }
+  'int'     { PT _ (TS _ 34) }
+  'new'     { PT _ (TS _ 35) }
+  'return'  { PT _ (TS _ 36) }
+  'string'  { PT _ (TS _ 37) }
+  'true'    { PT _ (TS _ 38) }
+  'void'    { PT _ (TS _ 39) }
+  'while'   { PT _ (TS _ 40) }
+  '{'       { PT _ (TS _ 41) }
+  '||'      { PT _ (TS _ 42) }
+  '}'       { PT _ (TS _ 43) }
   L_Ident   { PT _ (TV $$)   }
   L_integ   { PT _ (TI $$)   }
   L_quoted  { PT _ (TL $$)   }
@@ -77,9 +87,23 @@ Program : ListTopDef { Latte.Abs.Program $1 }
 TopDef :: { Latte.Abs.TopDef }
 TopDef
   : Type Ident '(' ListArg ')' Block { Latte.Abs.FnDef $1 $2 $4 $6 }
+  | 'class' Ident ClsExt '{' ListClsMem '}' { Latte.Abs.ClsDef $2 $3 $5 }
 
 ListTopDef :: { [Latte.Abs.TopDef] }
 ListTopDef : TopDef { (:[]) $1 } | TopDef ListTopDef { (:) $1 $2 }
+
+ClsExt :: { Latte.Abs.ClsExt }
+ClsExt
+  : {- empty -} { Latte.Abs.NoExt }
+  | 'extends' Ident { Latte.Abs.Ext $2 }
+
+ClsMem :: { Latte.Abs.ClsMem }
+ClsMem
+  : Type Ident ';' { Latte.Abs.Attr $1 $2 }
+  | Type Ident '(' ListArg ')' Block { Latte.Abs.Meth $1 $2 $4 $6 }
+
+ListClsMem :: { [Latte.Abs.ClsMem] }
+ListClsMem : {- empty -} { [] } | ClsMem ListClsMem { (:) $1 $2 }
 
 Arg :: { Latte.Abs.Arg }
 Arg : Type Ident { Latte.Abs.Arg $1 $2 }
@@ -101,14 +125,15 @@ Stmt
   : ';' { Latte.Abs.Empty }
   | Block { Latte.Abs.BStmt $1 }
   | Type ListItem ';' { Latte.Abs.Decl $1 $2 }
-  | Ident '=' Expr ';' { Latte.Abs.Ass $1 $3 }
-  | Ident '++' ';' { Latte.Abs.Incr $1 }
-  | Ident '--' ';' { Latte.Abs.Decr $1 }
+  | Expr8 '=' Expr ';' { Latte.Abs.Ass $1 $3 }
+  | Expr8 '++' ';' { Latte.Abs.Incr $1 }
+  | Expr8 '--' ';' { Latte.Abs.Decr $1 }
   | 'return' Expr ';' { Latte.Abs.Ret $2 }
   | 'return' ';' { Latte.Abs.VRet }
   | 'if' '(' Expr ')' Stmt { Latte.Abs.Cond $3 $5 }
   | 'if' '(' Expr ')' Stmt 'else' Stmt { Latte.Abs.CondElse $3 $5 $7 }
   | 'while' '(' Expr ')' Stmt { Latte.Abs.While $3 $5 }
+  | 'for' '(' Type Ident ':' Expr ')' Stmt { Latte.Abs.For $3 $4 $6 $8 }
   | Expr ';' { Latte.Abs.SExp $1 }
 
 Item :: { Latte.Abs.Item }
@@ -125,6 +150,8 @@ Type
   | 'string' { Latte.Abs.Str }
   | 'boolean' { Latte.Abs.Bool }
   | 'void' { Latte.Abs.Void }
+  | Type '[]' { Latte.Abs.Arr $1 }
+  | Ident { Latte.Abs.Cls $1 }
 
 ListType :: { [Latte.Abs.Type] }
 ListType
@@ -132,15 +159,33 @@ ListType
   | Type { (:[]) $1 }
   | Type ',' ListType { (:) $1 $3 }
 
+Expr8 :: { Latte.Abs.Expr }
+Expr8
+  : Ident { Latte.Abs.EVar $1 }
+  | Expr7 '[' Expr ']' { Latte.Abs.EArr $1 $3 }
+  | Expr7 '.' Ident { Latte.Abs.EAttr $1 $3 }
+  | '(' Expr ')' { $2 }
+
+Expr7 :: { Latte.Abs.Expr }
+Expr7
+  : Ident '(' ListExpr ')' { Latte.Abs.EApp $1 $3 }
+  | Expr7 '.' Ident '(' ListExpr ')' { Latte.Abs.EMeth $1 $3 $5 }
+  | 'new' Type EArrLen { Latte.Abs.ENew $2 $3 }
+  | Expr8 { $1 }
+
+EArrLen :: { Latte.Abs.EArrLen }
+EArrLen
+  : '[' Expr ']' { Latte.Abs.EArrLen $2 }
+  | {- empty -} { Latte.Abs.EClsLen }
+
 Expr6 :: { Latte.Abs.Expr }
 Expr6
-  : Ident { Latte.Abs.EVar $1 }
+  : '(' Type ')null' { Latte.Abs.ENullCast $2 }
   | Integer { Latte.Abs.ELitInt $1 }
   | 'true' { Latte.Abs.ELitTrue }
   | 'false' { Latte.Abs.ELitFalse }
-  | Ident '(' ListExpr ')' { Latte.Abs.EApp $1 $3 }
   | String { Latte.Abs.EString $1 }
-  | '(' Expr ')' { $2 }
+  | Expr7 { $1 }
 
 Expr5 :: { Latte.Abs.Expr }
 Expr5

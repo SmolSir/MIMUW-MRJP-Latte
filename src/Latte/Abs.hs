@@ -13,7 +13,14 @@ import qualified Data.String
 data Program = Program [TopDef]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data TopDef = FnDef Type Ident [Arg] Block
+data TopDef
+    = FnDef Type Ident [Arg] Block | ClsDef Ident ClsExt [ClsMem]
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data ClsExt = NoExt | Ext Ident
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data ClsMem = Attr Type Ident | Meth Type Ident [Arg] Block
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Arg = Arg Type Ident
@@ -26,29 +33,36 @@ data Stmt
     = Empty
     | BStmt Block
     | Decl Type [Item]
-    | Ass Ident Expr
-    | Incr Ident
-    | Decr Ident
+    | Ass Expr Expr
+    | Incr Expr
+    | Decr Expr
     | Ret Expr
     | VRet
     | Cond Expr Stmt
     | CondElse Expr Stmt Stmt
     | While Expr Stmt
+    | For Type Ident Expr Stmt
     | SExp Expr
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Item = NoInit Ident | Init Ident Expr
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
-data Type = Int | Str | Bool | Void | Fun Type [Type]
+data Type
+    = Int | Str | Bool | Void | Arr Type | Cls Ident | Fun Type [Type]
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Expr
     = EVar Ident
+    | EArr Expr Expr
+    | EAttr Expr Ident
+    | EApp Ident [Expr]
+    | EMeth Expr Ident [Expr]
+    | ENew Type EArrLen
+    | ENullCast Type
     | ELitInt Integer
     | ELitTrue
     | ELitFalse
-    | EApp Ident [Expr]
     | EString String
     | Neg Expr
     | Not Expr
@@ -57,6 +71,9 @@ data Expr
     | ERel Expr RelOp Expr
     | EAnd Expr Expr
     | EOr Expr Expr
+  deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+data EArrLen = EArrLen Expr | EClsLen
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data AddOp = Plus | Minus
