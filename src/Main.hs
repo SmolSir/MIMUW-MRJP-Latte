@@ -10,11 +10,11 @@ import Latte.ErrM
 import Latte.Par
 
 import Frontend (runStaticAnalysis)
-import Backend (runCompiler)
+--import Backend (runCompiler)
 
 latteLexer = myLexer
 
-compile :: String -> IO String
+compile :: String -> IO () -- String TODO: replace () with String
 compile input = do
     case pProgram (latteLexer input) of
         Bad _ -> do
@@ -29,15 +29,16 @@ compile input = do
                     hPutStrLn stderr errorMessage
                     exitFailure
                 Right _ -> do
-                    compilerResult <- runExceptT (runCompiler programTree)
-                    case compilerResult of
-                        Left errorMessage -> do
-                            hPutStrLn stderr "Error: compilation error"
-                            hPutStrLn stderr errorMessage
-                            exitFailure
-                        Right generatedCode -> do
-                            hPutStrLn stderr "OK\n"
-                            return generatedCode
+                    hPutStrLn stderr "OK\n" -- TODO: remove this
+                    -- compilerResult <- runExceptT (runCompiler programTree)
+                    -- case compilerResult of
+                    --     Left errorMessage -> do
+                    --         hPutStrLn stderr "Error: compilation error"
+                    --         hPutStrLn stderr errorMessage
+                    --         exitFailure
+                    --     Right generatedCode -> do
+                    --         hPutStrLn stderr "OK\n"
+                    --         return generatedCode
 
 writeCodeToFile :: String -> String -> IO ()
 writeCodeToFile file code = do
@@ -49,7 +50,7 @@ main :: IO ()
 main = do
     programArguments <- getArgs
     case programArguments of
-        [file] -> readFile file >>= compile >>= writeCodeToFile file
+        [file] -> readFile file >>= compile -- >>= writeCodeToFile file
         _      -> do
             putStrLn "Correct usage: ./latc_x86 <file>"
             exitFailure

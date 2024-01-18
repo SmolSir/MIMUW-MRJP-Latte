@@ -1,4 +1,4 @@
-INCLUDE_DIRECTORIES = -ifrontend:backend
+INCLUDE_DIRECTORIES = -ifrontend#:backend
 
 all:
 	$(MAKE) clean

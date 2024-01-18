@@ -1,7 +1,7 @@
 TODO
 *.hi
 *.o
-!runtime.o
+runtime.o
 *.s
 *.txt
 *.tar.gz
