@@ -14,8 +14,8 @@ import Backend (runCompiler)
 
 latteLexer = myLexer
 
-staticAnalysis :: String -> IO String
-staticAnalysis input = do
+compile :: String -> IO String
+compile input = do
     case pProgram (latteLexer input) of
         Bad _ -> do
             hPutStrLn stderr "Failed to parse input:"
@@ -49,7 +49,7 @@ main :: IO ()
 main = do
     programArguments <- getArgs
     case programArguments of
-        [file] -> readFile file >>= staticAnalysis >>= writeCodeToFile file
+        [file] -> readFile file >>= compile >>= writeCodeToFile file
         _      -> do
-            putStrLn "Correct usage: ./latc <file>"
+            putStrLn "Correct usage: ./latc_x86 <file>"
             exitFailure

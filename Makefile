@@ -3,11 +3,13 @@ ZIP_TARGET := bs429594-Latte.tar.gz
 
 all:
 	$(MAKE) clean
+	$(MAKE) -C lib all
 	$(MAKE) -C src all
 	cp src/latc .
 
 clean:
 	rm -rf latc ${ZIP_SOURCE} ${ZIP_TARGET}
+	$(MAKE) -C lib clean
 	$(MAKE) -C src clean
 
 zip:
