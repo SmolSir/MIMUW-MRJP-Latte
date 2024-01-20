@@ -48,6 +48,63 @@ matchExpressionTypeMessage expectedType expression =
     where
         errorMessage error = error ++ " in the following expression:\n" ++ printTree expression
 
+matchAttribute :: Variable -> Ident -> TCMonad TCType
+matchAttribute className ident@(Ident identifier) = do
+    classMap <- asks classMap
+    case Map.lookup className classMap of
+        Nothing ->
+            throwTCMonad $
+                "Impossible error: class `" ++
+                className ++
+                "` has been found by matching. It must exist"
+        (Just classDefinition) ->
+            case Map.lookup identifier (memberMap classDefinition) of
+                Nothing ->
+                    case extends classDefinition of
+                        Nothing ->
+                            throwTCMonad $
+                                "Usage of undeclared attribute `" ++
+                                identifier ++
+                                "`\n"
+                        (Just parentClassName) ->
+                            matchAttribute parentClassName ident
+                (Just (TFun _ _)) ->
+                    throwTCMonad $
+                        "Expected attribute: `" ++
+                        identifier ++
+                        "` but found a method instead"
+                (Just attributeType) ->
+                    return attributeType
+
+matchMethod :: Variable -> Ident -> [Expr] -> TCMonad TCType
+matchMethod className ident@(Ident identifier) expressionList = do
+    classMap <- asks classMap
+    case Map.lookup className classMap of
+        Nothing ->
+            throwTCMonad $
+                "Impossible error: class `" ++
+                className ++
+                "` has been found by matching. It must exist"
+        (Just classDefinition) ->
+            case Map.lookup identifier (memberMap classDefinition) of
+                Nothing ->
+                    case extends classDefinition of
+                        Nothing ->
+                            throwTCMonad $
+                                "Usage of undeclared method `" ++
+                                identifier ++
+                                "`\n"
+                        (Just parentClassName) ->
+                            matchMethod parentClassName ident expressionList
+                (Just (TFun argumentList returnType)) -> do
+                    argumentListCheck argumentList expressionList
+                    return returnType
+                (Just attributeType) ->
+                    throwTCMonad $
+                        "Expected method `" ++
+                        identifier ++
+                        "` but found an attribute instead"
+
 ----------------------------
 -- helper check functions --
 ----------------------------
@@ -104,17 +161,31 @@ equalityOperatorCheck tcTypeList expressionL expressionR = do
                         "with type: " ++
                         classR
 
+expressionAttributeCheck :: Expr -> Ident -> TCMonad TCType
+expressionAttributeCheck expression identifier = do
+    (TCls className) <- matchExpressionType metaClass expression
+    matchAttribute className identifier
+
 --------------------------------
 -- expression check functions --
 --------------------------------
 expressionCheck :: Expr -> TCMonad TCType
 expressionCheck (EVar (Ident variable)) = variableType variable
 
-expressionCheck (ELitInt _) = return TInt
+expressionCheck (EArr expressionL expressionR) = do
+    (TArr actualType) <- matchExpressionType metaArray expressionL
+    matchExpressionType TInt expressionR
+    return actualType
 
-expressionCheck (ELitTrue) = return TBool
-
-expressionCheck (ELitFalse) = return TBool
+expressionCheck (EAttr expression ident@(Ident identifier)) = do
+    if identifier == "length"
+        then do
+            actualType <- matchExpressionType metaArray expression
+            case actualType of
+                (TArr _) -> return TInt
+                _        -> expressionAttributeCheck expression ident
+        else do
+            expressionAttributeCheck expression ident
 
 expressionCheck (EApp (Ident identifier) expressionList) = do
     typeScope <- variableType identifier
@@ -124,6 +195,36 @@ expressionCheck (EApp (Ident identifier) expressionList) = do
             return returnType
         _ -> do
             throwTCMonad (identifier ++ " is not a function")
+
+expressionCheck (EMeth expression ident@(Ident identifier) expressionList) = do
+    (TCls className) <- matchExpressionType metaClass expression
+    matchMethod className ident expressionList
+
+expressionCheck (ENew (Cls (Ident identifier)) EClsLen) =
+    classExistsCheck identifier >> return (TCls identifier)
+
+expressionCheck (ENew arrayType (EArrLen expression)) = do
+    classTypeExistsCheck arrayType
+    matchExpressionType TInt expression
+    TArr <$> convertTypeToTCType arrayType
+
+expressionCheck (ENew _ _) =
+    throwTCMonad "Invalid `new` expression"
+
+expressionCheck (ENullCast (Arr arrayType)) =
+    classTypeExistsCheck arrayType >> TArr <$> convertTypeToTCType arrayType
+
+expressionCheck (ENullCast (Cls ident@(Ident identifier))) =
+    classTypeExistsCheck (Cls ident) >> return (TCls identifier)
+
+expressionCheck (ENullCast _) =
+    throwTCMonad "Invalid `null` cast expression"
+
+expressionCheck (ELitInt _) = return TInt
+
+expressionCheck (ELitTrue) = return TBool
+
+expressionCheck (ELitFalse) = return TBool
 
 expressionCheck (EString _) = return TString
 
@@ -138,10 +239,10 @@ expressionCheck (EAdd expressionL Plus expressionR) = operatorCheck [TInt, TStri
 expressionCheck (EAdd expressionL Minus expressionR) = operatorCheck [TInt] expressionL expressionR
 
 expressionCheck (ERel expressionL EQU expressionR) =
-    operatorCheck [TInt, TString, TBool] expressionL expressionR >> return TBool
+    equalityOperatorCheck [TInt, TString, TBool, metaArray, metaClass] expressionL expressionR >> return TBool
 
 expressionCheck (ERel expressionL NE expressionR) =
-    operatorCheck [TInt, TString, TBool] expressionL expressionR >> return TBool
+    equalityOperatorCheck [TInt, TString, TBool, metaArray, metaClass] expressionL expressionR >> return TBool
 
 expressionCheck (ERel expressionL _ expressionR) =
     operatorCheck [TInt, TString] expressionL expressionR >> return TBool

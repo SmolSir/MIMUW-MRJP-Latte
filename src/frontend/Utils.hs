@@ -193,6 +193,9 @@ classTypeExistsCheck (Cls (Ident identifier)) = classExistsCheck identifier
 
 classTypeExistsCheck _ = return ()
 
+-------------------------
+-- class get functions --
+-------------------------
 getMaybeClassDefinition :: Variable -> TCMonad (Maybe ClassDefinition)
 getMaybeClassDefinition cls = do
     classMap <- asks classMap
