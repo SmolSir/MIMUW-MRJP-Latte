@@ -20,10 +20,27 @@ import Utils
 -- helper match functions --
 ----------------------------
 matchExpressionType :: TCType -> Expr -> TCMonad TCType
-matchExpressionType expectedType expression = do
-    actualType <- expressionCheck expression
-    matchType [expectedType] actualType
-    return actualType
+matchExpressionType expectedType expression
+    | expectedType == metaArray = do
+        actualType <- expressionCheck expression
+        case actualType of
+            (TArr arrayType) -> return actualType
+            _                -> throwTCMonad $
+                "Expected some array type, but the actual type was: " ++
+                show actualType
+        return actualType
+    | expectedType == metaClass = do
+        actualType <- expressionCheck expression
+        case actualType of
+            (TCls className) -> return actualType
+            _                -> throwTCMonad $
+                "Expected some class type, but the actual type was: " ++
+                show actualType
+        return actualType
+    | otherwise = do
+        actualType <- expressionCheck expression
+        matchType [expectedType] actualType
+        return actualType
 
 matchExpressionTypeMessage :: TCType -> Expr -> TCMonad TCType
 matchExpressionTypeMessage expectedType expression =
@@ -57,6 +74,35 @@ operatorCheck tcTypeList expressionL expressionR = do
     matchType tcTypeList typeL
     matchType [typeL] typeR
     return typeL
+
+equalityOperatorCheck :: [TCType] -> Expr -> Expr -> TCMonad TCType
+equalityOperatorCheck tcTypeList expressionL expressionR = do
+    typeL <- expressionCheck expressionL
+    typeR <- expressionCheck expressionR
+    case (typeL, typeR) of
+        (TArr arrayTypeL, TArr arrayTypeR) -> arrayCompatibilityCheck arrayTypeL arrayTypeR
+        (TCls classTypeL, TCls classTypeR) -> classCompatibilityCheck classTypeL classTypeR
+        _ -> do
+            matchType tcTypeList typeL
+            matchType [typeL] typeR
+    return typeL
+    where
+        arrayCompatibilityCheck :: TCType -> TCType -> TCMonad ()
+        arrayCompatibilityCheck (TArr arrayTypeL) (TArr arrayTypeR) = arrayCompatibilityCheck arrayTypeL arrayTypeR
+        arrayCompatibilityCheck (TCls classTypeL) (TCls classTypeR) = classCompatibilityCheck classTypeL classTypeR
+        arrayCompatibilityCheck tcTypeL tcTypeR = matchType [tcTypeL] tcTypeR
+
+        classCompatibilityCheck :: Variable -> Variable -> TCMonad ()
+        classCompatibilityCheck classL classR = do
+            compatibleClassListL <- getCompatibleClassList classL
+            when (notElem classR compatibleClassListL) $ do
+                compatibleClassListR <- getCompatibleClassList classR
+                when (notElem classL compatibleClassListR) $
+                    throwTCMonad $
+                        "Cannot compare type: " ++
+                        classL ++
+                        "with type: " ++
+                        classR
 
 --------------------------------
 -- expression check functions --

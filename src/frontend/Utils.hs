@@ -41,6 +41,16 @@ data TCType
     | TFun [TCType] TCType
     deriving (Eq)
 
+
+--------------------
+-- meta variables --
+--------------------
+metaArray :: TCType
+metaArray = TArr TVoid
+
+metaClass :: TCType
+metaClass = TCls ""
+
 ----------------------
 -- helper functions --
 ----------------------
@@ -80,12 +90,6 @@ throwTCMonad = lift . throwE
 
 throwAdditionalMessage :: TCMonad a -> (String -> String) -> TCMonad a
 throwAdditionalMessage actual message = catchError actual (throwTCMonad . message)
-
-metaArray :: TCType
-metaArray = TArr TVoid
-
-metaClass :: TCType
-metaClass = TCls ""
 
 matchType :: [TCType] -> TCType -> TCMonad ()
 matchType [TCls parentCls] (TCls cls) = do
