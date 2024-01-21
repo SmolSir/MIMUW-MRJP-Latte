@@ -67,6 +67,7 @@ functionDefinitionsCheck functionDefinitionList = do
             local (const env) $ functionDefinitionCheck functionDefinition
 
         functionDefinitionCheck :: TopDef -> TCMonad TCEnvironment
+        functionDefinitionCheck (ClsDef _ _ _) = ask
         functionDefinitionCheck (FnDef returnType (Ident identifier) argumentList block) = do
             tcReturnType    <- convertTypeToTCType returnType
             environment     <- ask
@@ -79,27 +80,6 @@ functionDefinitionsCheck functionDefinitionList = do
             ask
             where
                 errorMessage error = "inside function `" ++ identifier ++ "`\n" ++ error
-
-functionArgumentListCheck :: [Arg] -> TCMonad TypeMap
-functionArgumentListCheck argumentList = do
-    scope    <- asks scope
-    typeList <- mapM (
-        \(Arg argumentType (Ident identifier)) -> do
-            when (voidTypeCheck argumentType) $
-                throwTCMonad $
-                    "Invalid function parameter of type void: `" ++
-                    identifier ++
-                    "`\n"
-            tcType <- convertTypeToTCType argumentType
-            return (identifier, (tcType, scope + 1))
-        )
-        argumentList
-    let typeMap = fromList typeList
-    if length typeMap == length typeList
-        then
-            return typeMap
-        else
-            throwTCMonad "Duplicate function's argument names"
 
 -------------------
 -- run functions --

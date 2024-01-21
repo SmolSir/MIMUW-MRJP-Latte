@@ -149,6 +149,27 @@ voidTypeCheck (Arr arrayType) = voidTypeCheck arrayType
 
 voidTypeCheck _ = False
 
+functionArgumentListCheck :: [Arg] -> TCMonad TypeMap
+functionArgumentListCheck argumentList = do
+    scope    <- asks scope
+    typeList <- mapM (
+        \(Arg argumentType (Ident identifier)) -> do
+            when (voidTypeCheck argumentType) $
+                throwTCMonad $
+                    "Invalid function parameter of type void: `" ++
+                    identifier ++
+                    "`\n"
+            tcType <- convertTypeToTCType argumentType
+            return (identifier, (tcType, scope + 1))
+        )
+        argumentList
+    let typeMap = fromList typeList
+    if length typeMap == length typeList
+        then
+            return typeMap
+        else
+            throwTCMonad "Duplicate function's argument names"
+
 ------------------------------
 -- variable check functions --
 ------------------------------
