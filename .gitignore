@@ -9,4 +9,5 @@ solution
 latc
 test/*
 test.out
-!test/*.*
+!test/*.lat
+!test/*.output
