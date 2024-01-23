@@ -1,4 +1,4 @@
-module Expressions where
+module C_Expressions where
 
 import Data.Map as Map
 

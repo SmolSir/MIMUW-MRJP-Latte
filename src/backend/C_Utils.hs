@@ -1,4 +1,4 @@
-module Utils where
+module C_Utils where
 
 import Data.Map as Map
 

@@ -1,4 +1,4 @@
-module Statements where
+module C_Statements where
 
 import Data.Map as Map
 

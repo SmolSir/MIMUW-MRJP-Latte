@@ -1,4 +1,4 @@
-module Classes where
+module C_Classes where
 
 import Data.Map as Map
 
@@ -7,8 +7,8 @@ import Control.Monad.State
 
 import Latte.Abs
 
-import Statements
-import Utils
+import C_Statements
+import C_Utils
 
 
 ----------------------
