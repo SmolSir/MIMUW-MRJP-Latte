@@ -45,21 +45,21 @@ for directory in ${good[@]}; do
             exit $exit_code
         fi
 
-        # # compile
-        # gcc -m32 -z execstack lib/runtime.o ${file%.*}.s -o ${file%.*}
+        # compile
+        gcc -m32 -z execstack lib/runtime.o ${file%.*}.s -o ${file%.*}
 
-        # # run with input if present
-        # if [ -f ${file%.*}.input ]; then
-        #     ./${file%.*} < ${file%.*}.input > test.out
-        # else
-        #     ./${file%.*} > test.out
-        # fi
-        # diff test.out ${file%.*}.output
-        # exit_code=$?
-        # if [ $exit_code -ne 0 ]; then
-        #     echo "Test $file failed: output differs"
-        #     exit $exit_code
-        # fi
+        # run with input if present
+        if [ -f ${file%.*}.input ]; then
+            ./${file%.*} < ${file%.*}.input > test.out
+        else
+            ./${file%.*} > test.out
+        fi
+        diff test.out ${file%.*}.output
+        exit_code=$?
+        if [ $exit_code -ne 0 ]; then
+            echo "Test $file failed: output differs"
+            exit $exit_code
+        fi
     done
 done
 
