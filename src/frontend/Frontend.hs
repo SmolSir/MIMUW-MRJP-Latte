@@ -7,10 +7,10 @@ import Control.Monad.Reader
 
 import Latte.Abs
 
-import Classes
-import Returns
-import Statements
-import Utils
+import TC_Classes
+import TC_Returns
+import TC_Statements
+import TC_Utils
 
 
 ----------------------

@@ -1,4 +1,4 @@
-module Utils where
+module TC_Utils where
 
 import Data.List as List
 import Data.Map as Map

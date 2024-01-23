@@ -1,4 +1,4 @@
-module Expressions (
+module TC_Expressions (
     expressionCheck,
     statementExpressionCheck,
     matchExpressionType,
@@ -13,7 +13,7 @@ import Control.Monad.Reader
 import Latte.Abs
 import Latte.Print
 
-import Utils
+import TC_Utils
 
 
 ----------------------------

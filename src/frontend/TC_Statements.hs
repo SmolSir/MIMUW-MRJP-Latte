@@ -1,4 +1,4 @@
-module Statements (statementCheck) where
+module TC_Statements (statementCheck) where
 
 import Data.Map as Map
 
@@ -7,8 +7,8 @@ import Control.Monad.Reader
 import Latte.Abs
 import Latte.Print
 
-import Utils
-import Expressions
+import TC_Utils
+import TC_Expressions
 
 
 ----------------------

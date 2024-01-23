@@ -1,4 +1,4 @@
-module Classes (saveAllClassesMembers, classDefinitionsCheck) where
+module TC_Classes (saveAllClassesMembers, classDefinitionsCheck) where
 
 import Data.List as List
 import Data.Map as Map
@@ -7,8 +7,8 @@ import Control.Monad.Reader
 
 import Latte.Abs
 
-import Statements
-import Utils
+import TC_Statements
+import TC_Utils
 
 ------------------------
 -- exported functions --

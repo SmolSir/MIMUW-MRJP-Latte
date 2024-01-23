@@ -1,11 +1,11 @@
-module Returns (runReturnsCheck) where
+module TC_Returns (runReturnsCheck) where
 
 import Latte.Abs
 
-import Utils
-
 import Control.Monad.Reader
 import Control.Monad.Trans.Except
+
+import TC_Utils
 
 
 ---------------------
