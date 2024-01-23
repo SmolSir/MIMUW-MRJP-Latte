@@ -71,7 +71,7 @@ functionDefinitionsCheck functionDefinitionList = do
         functionDefinitionCheck (FnDef returnType (Ident identifier) argumentList block) = do
             tcReturnType    <- convertTypeToTCType returnType
             environment     <- ask
-            argumentTypeMap <- functionArgumentListCheck argumentList
+            argumentTypeMap <- functionArgumentListCheck argumentList `throwAdditionalMessage` errorMessage
             let env = environment {
                 typeMap            = Map.union argumentTypeMap (typeMap environment),
                 expectedReturnType = Just tcReturnType

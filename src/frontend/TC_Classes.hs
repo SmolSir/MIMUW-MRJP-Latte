@@ -173,7 +173,7 @@ classMethodCheck identifier environment classMember =
                         (Just parentClass) -> do
                             parentClassDefinition <- getConfirmedClassDefinition parentClass
                             matchVirtualMethod classDefinition parentClassDefinition
-                    argumentTypeList <- functionArgumentListCheck argumentList
+                    argumentTypeList <- functionArgumentListCheck argumentList `throwAdditionalMessage` innerErrorMessage
                     let argTypeList = Map.insert "self" (TCls className, scope environment + 1) argumentTypeList
                     returnTCType <- convertTypeToTCType returnType
                     environment <- ask
