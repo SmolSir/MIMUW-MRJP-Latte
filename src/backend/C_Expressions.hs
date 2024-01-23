@@ -227,6 +227,7 @@ translateLValue (EMeth expression (Ident identifier) expressionList) = do
         expressionListCode .
         expressionCode .
         instructionListMerge [
+            PUSH $ RegisterOp EAX,
             MOV (AddressOp 0 EAX) (RegisterOp EAX),
             CALL_METHOD (MethodAddressOp offset EAX),
             BINARY_INSTRUCTION ADD (LiteralOp (dword * ((fromIntegral (length expressionList)) + 1))) (RegisterOp ESP)
