@@ -230,7 +230,7 @@ translateLValue (EMeth expression (Ident identifier) expressionList) = do
             PUSH $ RegisterOp EAX,
             MOV (AddressOp 0 EAX) (RegisterOp EAX),
             CALL_METHOD (MethodAddressOp offset EAX),
-            BINARY_INSTRUCTION ADD (LiteralOp (dword * ((fromIntegral (length expressionList)) + 1))) (RegisterOp ESP)
+            BINARY_INSTRUCTION ADD (LiteralOp (dword * (1 + fromIntegral (length expressionList)))) (RegisterOp ESP)
         ]
 
 translateLValue (ENew _ (EArrLen expression)) = do
@@ -250,7 +250,7 @@ translateLValue (ENew _ (EArrLen expression)) = do
 
 translateLValue eNew@(ENew (Cls (Ident identifier)) EClsLen) = do
     virtualMethodTable <- getVMTableMapValue eNew
-    let memorySize = (fromIntegral $ Map.size $ virtualAttributeMap virtualMethodTable) + 1
+    let memorySize = (1 + ) $ fromIntegral $ Map.size $ virtualAttributeMap virtualMethodTable
     let generatedCode =
             if (virtualMethodList virtualMethodTable) /= []
                 then

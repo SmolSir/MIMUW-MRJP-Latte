@@ -184,6 +184,7 @@ translateStatement (While expression statement) = do
     labelLoop      <- getFreeLabel
     expressionConditionCode <- translateCondition expression labelLoop labelNext
     statementLoopCode       <- translateStatementBlockWrap statement
+    environment <- ask
     let resultCollector =
             instructionListAdd (JUMP JMP $ JumpLabel labelCondition) .
             instructionListAdd (LABEL $ JumpLabel labelLoop) .
@@ -191,7 +192,6 @@ translateStatement (While expression statement) = do
             instructionListAdd (LABEL $ JumpLabel labelCondition) .
             expressionConditionCode .
             instructionListAdd (LABEL $ JumpLabel labelNext)
-    environment <- ask
     return (
         environment,
         resultCollector
