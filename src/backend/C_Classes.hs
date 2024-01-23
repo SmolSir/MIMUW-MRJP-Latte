@@ -98,7 +98,7 @@ translateVirtualMethodTable (className, _) = do
                         methodName ++
                         "` inside its class has already been confirmed by the typechecker"
                 (Just (methodType, clsName)) ->
-                    (methodName, (methodType, className))
+                    (methodName, (methodType, clsName))
 
 ------------------------
 -- exported functions --

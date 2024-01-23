@@ -5,22 +5,22 @@ make
 
 bad=(
     test/lattests/bad
-    # test/mrjp-tests/bad/infinite_loop
-    # test/mrjp-tests/bad/runtime
-    # test/mrjp-tests/bad/semantic
+    test/mrjp-tests/bad/infinite_loop
+    test/mrjp-tests/bad/semantic
 )
 
 good=(
     test/lattests/good
-    # test/lattests/extensions/struct
-    # test/lattests/extensions/arrays1
-    # test/lattests/extensions/objects1
-    # test/lattests/extensions/objects2
-    # test/mrjp-tests/good/basic
-    # test/mrjp-tests/good/hardcore
-    # test/mrjp-tests/good/arrays
-    # test/mrjp-tests/good/virtual
-    # test/mrjp-tests/gr5
+    test/lattests/extensions/struct
+    test/lattests/extensions/arrays1
+    test/lattests/extensions/objects1
+    test/lattests/extensions/objects2
+    test/mrjp-tests/good/basic
+    test/mrjp-tests/good/arrays
+    test/mrjp-tests/good/virtual
+
+    # test/mrjp-tests/good/hardcore   # Optimisations, we do not support them
+    # test/mrjp-tests/gr5             # These are strange to say the least
 )
 
 for directory in ${bad[@]}; do
@@ -46,7 +46,7 @@ for directory in ${good[@]}; do
         fi
 
         # compile
-        gcc -m32 -z execstack lib/runtime.o ${file%.*}.s -o ${file%.*}
+        gcc -m32 -D_GNU_SOURCE -z execstack lib/runtime.o ${file%.*}.s -o ${file%.*}
 
         # run with input if present
         if [ -f ${file%.*}.input ]; then
