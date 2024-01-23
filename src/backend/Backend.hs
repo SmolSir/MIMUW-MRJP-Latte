@@ -11,6 +11,10 @@ import Control.Monad.Trans.Except
 
 import Latte.Abs
 
+import C_Classes
+import C_Statements
+import C_Utils
+
 
 ----------------------
 -- helper functions --
@@ -22,10 +26,10 @@ translateTopDef (FnDef returnType (Ident identifier) argumentList block) = do
         returnLabel = "ret_" ++ identifier
     })
     let argList = Map.fromList $
-        zipWith
-            (\(Arg argumentType (Ident ident)) index -> (ident, (Parameter index, argumentType)))
-            argumentList
-            [1 .. ]
+            zipWith
+                (\(Arg argumentType (Ident ident)) index -> (ident, (Parameter index, argumentType)))
+                argumentList
+                [1 .. ]
     (_, code) <- local
         (\environment -> environment { variableMap = argList })
         (translateStatement (BStmt block))
@@ -45,13 +49,13 @@ translateTopDef (FnDef returnType (Ident identifier) argumentList block) = do
 
 translateTopDef (ClsDef (Ident identifier) _ classMemberList) = do
     code <- mapM (translateMethods identifier) classMemberList
-    return $ foldr (.) id code
+    return $ List.foldr (.) id code
 
 translateProgram :: InstructionPrepend -> [TopDef] -> CMonad InstructionPrepend
 translateProgram vmTablesCode topDefList = do
     topDefsCode <- foldM foldFunction id topDefList
     stringMap   <- gets stringMap
-    let stringLabelList = map LABEL $ Map.elems stringMap
+    let stringLabelList = List.map LABEL $ Map.elems stringMap
     return $
         instructionListMerge [
             ENTRY,
@@ -62,7 +66,7 @@ translateProgram vmTablesCode topDefList = do
         instructionListAdd (TEXT) .
         topDefsCode
     where
-        foldFunction :: InstructionPrepend -> TopDef -> InstructionPrepend
+        foldFunction :: InstructionPrepend -> TopDef -> CMonad InstructionPrepend
         foldFunction accumulatedCode topDef = do
             generatedCode <- translateTopDef topDef
             return (accumulatedCode . generatedCode)
@@ -78,7 +82,7 @@ runCompiler (Program prog) =
         go prog = do
             saveClassListMembers prog
             virtualMethodTablesCode <- translateAllVirtualMethodTables
-             flip ($) [] <$> translateProgram virtualMethodTablesCode prog >>= instructionListUnpack
+            flip ($) [] <$> translateProgram virtualMethodTablesCode prog >>= instructionListUnpack
 
         predefinedFunctionMap :: Map.Map Variable Type
         predefinedFunctionMap = Map.fromList [

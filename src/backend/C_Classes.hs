@@ -1,5 +1,6 @@
 module C_Classes where
 
+import Data.List as List
 import Data.Map as Map
 
 import Control.Monad.Reader
@@ -27,18 +28,18 @@ getParentClassMemberList (Just className) = do
             accumulatorList <- getParentClassMemberList $ extends classDefinition
             return $ (
                 Map.toList $ attributeMap classDefinition,
-                map
+                List.map
                     (\(variable, returnType) -> (variable, (returnType, className)))
                     (Map.toList $ methodMap classDefinition)
-            ) : accumulatorList
+                ) : accumulatorList
 
-foldClassMember :: ([(Variable, Type)], [(Variable, Type)]) -> ClsMem -> ([(Variable, Type)], [(Variable, Type)])
+foldClassMember :: ([(Variable, Type)], [(Variable, Type)]) -> ClsMem -> CMonad ([(Variable, Type)], [(Variable, Type)])
 foldClassMember (attributeList, methodList) member = do
     case member of
         Attr attributeType (Ident identifier) -> do
-            return ((identifier, returnType) : attributeList, methodList)
+            return ((identifier, attributeType) : attributeList, methodList)
         Meth returnType (Ident identifier) argumentList _ -> do
-            let methodType = Fun returnType (map (\(Arg argumentType _) -> argumentType) argumentList)
+            let methodType = Fun returnType (List.map (\(Arg argumentType _) -> argumentType) argumentList)
             return (attributeList, (identifier, methodType) : methodList)
 
 saveClassMembers :: TopDef -> CMonad ()
@@ -67,21 +68,21 @@ translateVirtualMethodTable (className, _) = do
     parentMemberList <- getParentClassMemberList (Just className)
     let (parentAttributeList, parentMethodList) = unzip parentMemberList
     let virtualAttrList =
-        zipWith
-            (\(attributeName, attributeType) index -> (attributeName, (Attribute index, attributeType)))
-            (concat $ reverse parentAttributeList)
-            [1 .. ]
+            zipWith
+                (\(attributeName, attributeType) index -> (attributeName, (Attribute index, attributeType)))
+                (concat $ reverse parentAttributeList)
+                [1 .. ]
     let parentMethList =
-        concat $ reverse parentMethodList
+            concat $ reverse parentMethodList
     let orderedParentMethList =
-        map fst $ nubBy (\(methodL, _) (methodR, _) -> methodL == methodR) parentMethList
+            List.map fst $ nubBy (\(methodL, _) (methodR, _) -> methodL == methodR) parentMethList
     let parentMethMap =
-        Map.fromList parentMethList
+            Map.fromList parentMethList
     let virtualMethList =
-        zipWith
-            (\(methodName, (methodType, clsName)) index -> (methodName, (methodType, index, clsName)))
-            (map (`findMethodTypeAndClass` parentMethMap) orderedParentMethList)
-            [0 .. ]
+            zipWith
+                (\(methodName, (methodType, clsName)) index -> (methodName, (methodType, index, clsName)))
+                (List.map (`findMethodTypeAndClass` parentMethMap) orderedParentMethList)
+                [0 .. ]
     let virtualMethodTable = VMTable {
         virtualAttributeMap = Map.fromList virtualAttrList,
         virtualMethodList   = virtualMethList
@@ -124,10 +125,10 @@ translateMethods className (Meth returnType (Ident identifier) argumentList bloc
         (Just virtualMethodTable) -> do
             (_, generatedCode) <- do
                 let argMap = Map.fromList $
-                    zipWith
-                        (\(Arg argumentType (Ident ident)) index -> (ident, (Parameter index, argumentType)))
-                        argumentList
-                        [2 .. ]
+                        zipWith
+                            (\(Arg argumentType (Ident ident)) index -> (ident, (Parameter index, argumentType)))
+                            argumentList
+                            [2 .. ]
                 let argMapIncludeSelf = Map.insert "self" (Parameter 1, Cls (Ident className)) argMap
                 local
                     (\environment -> environment {
@@ -155,20 +156,20 @@ translateAllVirtualMethodTables = do
     mapM_ translateVirtualMethodTable $ Map.toList classDefinitionMap
     virtualMethodTableMap <- gets vmtableMap
     let virtualMethodLabelList =
-        map
-            (\(className, vmTable) -> (className, map labelVirtualMethod (virtualMethodList vmTable)))
-            (Map.toList virtualMethodTableMap)
+            List.map
+                (\(className, vmTable) -> (className, List.map labelVirtualMethod (virtualMethodList vmTable)))
+                (Map.toList virtualMethodTableMap)
     let virtualMethLabelList =
-        filter (\(_, vmList) -> vmList /= []) virtualMethodLabelList
+            List.filter (\(_, vmList) -> vmList /= []) virtualMethodLabelList
     let instructionList =
-        map (uncurry translateVirtualMethodLabel) virtualMethLabelList
-    return $ foldr (.) id instructionList
+            List.map (uncurry translateVirtualMethodLabel) virtualMethLabelList
+    return $ List.foldr (.) id instructionList
     where
         translateVirtualMethodLabel :: Variable -> [String] -> InstructionPrepend
         translateVirtualMethodLabel clsName methodList = instructionListMerge [
             LABEL $ FunctionLabel (getVirtualMethodTableLabel clsName),
             VM_TABLE methodList
-        ]
+            ]
 
         labelVirtualMethod :: (Variable, (Type, Integer, Variable)) -> String
         labelVirtualMethod (methodName, (_, _, clsName)) = getMethodLabel clsName methodName

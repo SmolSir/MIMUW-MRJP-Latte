@@ -1,11 +1,14 @@
 module C_Expressions where
 
+import Data.List as List
 import Data.Map as Map
 
 import Control.Monad.Reader
 import Control.Monad.State
 
 import Latte.Abs
+
+import C_Utils
 
 
 ----------------------
@@ -110,12 +113,12 @@ translateLValue (EVar (Ident identifier)) = do
             MOV (MemoryOp $ Parameter 1) (RegisterOp EAX),
             LEA (MemoryOp loc) (RegisterOp EDX),
             MOV (RegisterOp EDX) (RegisterOp EAX)
-        ]
+            ]
 
         localCode :: Memory -> [Instruction]
         localCode loc = [
             LEA (MemoryOp loc) (RegisterOp EAX)
-        ]
+            ]
 
 translateLValue (EArr expressionL expressionR) = do
     generatedCodeL <- translateLValue expressionL
@@ -138,7 +141,7 @@ translateLValue (EArr expressionL expressionR) = do
             POP (RegisterOp EDX),
             UNARY_INSTRUCTION INC (RegisterOp EDX),
             LEA (ArrayElementAddressOp EAX EDX dword) (RegisterOp EAX)
-        ]
+            ]
 
         generateAssignableCode :: InstructionPrepend
         generateAssignableCode = instructionListMerge [
@@ -146,7 +149,7 @@ translateLValue (EArr expressionL expressionR) = do
             UNARY_INSTRUCTION INC (RegisterOp EDX),
             MOV (AddressOp 0 EAX) (RegisterOp EAX),
             LEA (ArrayElementAddressOp EAX EDX dword) (RegisterOp EAX)
-        ]
+            ]
 
 translateLValue (EAttr expression (Ident identifier)) = do
     accumulatedCode      <- translateLValue expression
@@ -155,7 +158,7 @@ translateLValue (EAttr expression (Ident identifier)) = do
         accumulatedCode .
         generateCode value
     where
-        generateCode :: Memory -> InstructionPrepend
+        generateCode :: Integer -> InstructionPrepend
         generateCode value = do
             case expression of
                 (EApp _ _)    -> generateAccessibleCode value
@@ -163,11 +166,11 @@ translateLValue (EAttr expression (Ident identifier)) = do
                 (ENew _ _)    -> generateAccessibleCode value
                 _             -> generateAssignableCode value
 
-        generateAccessibleCode :: Memory -> InstructionPrepend
+        generateAccessibleCode :: Integer -> InstructionPrepend
         generateAccessibleCode value =
             instructionListAdd (LEA (AttributeAddressOp value EAX) (RegisterOp EAX))
 
-        generateAssignableCode :: Memory -> InstructionPrepend
+        generateAssignableCode :: Integer -> InstructionPrepend
         generateAssignableCode value =
             instructionListMerge [
                 MOV (AddressOp 0 EAX) (RegisterOp EDX),
@@ -198,10 +201,10 @@ translateLValue (EApp (Ident identifier) expressionList) = do
         translateLValueEApp = do
             expressionListCodeList <- mapM translateExpression expressionList
             let expressionListCode =
-                foldr
-                    (\code accumulatedCode -> code . instructionListAdd (PUSH $ RegisterOp EAX) . accumulatedCode)
-                    id
-                    (reverse expressionListCodeList)
+                    List.foldr
+                        (\code accumulatedCode -> code . instructionListAdd (PUSH $ RegisterOp EAX) . accumulatedCode)
+                        id
+                        (reverse expressionListCodeList)
             returnType <- getFunctionReturnTypeMapValue identifier
             return $
                 expressionListCode .
@@ -216,10 +219,10 @@ translateLValue (EMeth expression (Ident identifier) expressionList) = do
     expressionCode         <- translateExpression expression
     expressionListCodeList <- mapM translateExpression expressionList
     let expressionListCode =
-        foldr
-            (\code accumulatedCode -> code . instructionListAdd (PUSH $ RegisterOp EAX) . accumulatedCode)
-            id
-            (reverse) expressionListCodeList
+            List.foldr
+                (\code accumulatedCode -> code . instructionListAdd (PUSH $ RegisterOp EAX) . accumulatedCode)
+                id
+                (reverse expressionListCodeList)
     return $
         expressionListCode .
         expressionCode .
@@ -248,11 +251,11 @@ translateLValue eNew@(ENew (Cls (Ident identifier)) EClsLen) = do
     virtualMethodTable <- getVMTableMapValue eNew
     let memorySize = (fromIntegral $ Map.size $ virtualAttributeMap virtualMethodTable) + 1
     let generatedCode =
-        if (virtualMethodList virtualMethodTable) /= []
-            then
-                instructionListAdd $ MOV (VMTableLiteralOp $ getVirtualMethodTableLabel identifier) (AddressOp 0 EAX)
-            else
-                id
+            if (virtualMethodList virtualMethodTable) /= []
+                then
+                    instructionListAdd $ MOV (VMTableLiteralOp $ getVirtualMethodTableLabel identifier) (AddressOp 0 EAX)
+                else
+                    id
     return $
         instructionListMerge [
             PUSH $ LiteralOp dword,
@@ -285,7 +288,7 @@ translateCondition (ERel expressionL operator expressionR) labelTrue labelFalse 
                 comparisonCallCode .
                 instructionListMerge [
                     BINARY_INSTRUCTION CMP (LiteralOp 0) (RegisterOp EAX),
-                    JUMP (translateOperator operator) $ JumpLabel labelTrue .
+                    JUMP (translateOperator operator) $ JumpLabel labelTrue,
                     JUMP JMP $ JumpLabel labelFalse
                 ]
         _ -> do
@@ -364,7 +367,7 @@ getExpressionType (ENew classType EClsLen) = return classType
 
 getExpressionType (ENullCast (Arr arrayType)) = return (Arr arrayType)
 
-getExpressionType (ENullCast class@(Cls _)) = return class
+getExpressionType (ENullCast cls@(Cls _)) = return cls
 
 getExpressionType (ELitInt _) = return Int
 
@@ -380,7 +383,7 @@ getExpressionType (Not _) = return Bool
 
 getExpressionType (EMul _ _ _) = return Int
 
-getExpressionType (EAdd expressionL Plus _) = getExpressionType expression
+getExpressionType (EAdd expressionL Plus _) = getExpressionType expressionL
 
 getExpressionType (EAdd _ Minus _) = return Int
 
@@ -401,12 +404,12 @@ translateExpression (EVar (Ident identifier)) = do
         attributeCode loc = [
             MOV (MemoryOp $ Parameter 1) (RegisterOp EAX),
             MOV (MemoryOp loc) (RegisterOp EAX)
-        ]
+            ]
 
         localCode :: Memory -> [Instruction]
         localCode loc = [
             MOV (MemoryOp loc) (RegisterOp EAX)
-        ]
+            ]
 
 translateExpression eArr@(EArr _ _) = do
     generatedCode <- translateLValue eArr
@@ -420,7 +423,7 @@ translateExpression eAttr@(EAttr expression (Ident identifier)) = do
         (Arr _) -> do
             translateExpression (EArr expression (ELitInt (-1)))
         _ -> do
-            generatedCode <- translateLValue EAttr
+            generatedCode <- translateLValue eAttr
             return $
                 generatedCode .
                 instructionListAdd (MOV (AddressOp 0 EAX) (RegisterOp EAX))
@@ -465,8 +468,8 @@ translateExpression (EMul expressionL Times expressionR) =
 
 translateExpression (EMul expressionL operator expressionR) = do
     let returnCode = case operator of
-        Div -> id
-        Mod -> instructionListAdd (MOV (RegisterOp EDX) (RegisterOp EAX))
+            Div -> id
+            Mod -> instructionListAdd (MOV (RegisterOp EDX) (RegisterOp EAX))
     generatedCodeL <- translateExpression expressionL
     generatedCodeR <- translateExpression expressionR
     return $
@@ -513,7 +516,7 @@ translateExpression eRel@(ERel expressionL operator expressionR) = do
                     MOV trueLiteral (RegisterOp EAX),
                     LABEL $ JumpLabel labelNext
                 ]
-        _ ->
+        _ -> do
             labelTrue  <- getFreeLabel
             labelFalse <- getFreeLabel
             labelNext  <- getFreeLabel

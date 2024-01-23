@@ -1,5 +1,6 @@
 module C_Utils where
 
+import Data.List as List
 import Data.Map as Map
 
 import Control.Monad.Reader
@@ -276,7 +277,7 @@ getStringLabel string = do
                 stringMap = Map.insert string (StringLabel label string) stringMap
             })
             return label
-        (Just StringLabel label string) -> return label
+        (Just (StringLabel label string)) -> return label
 
 getMethodLabel :: Variable -> Variable -> String
 getMethodLabel className methodName = className ++ "." ++ methodName

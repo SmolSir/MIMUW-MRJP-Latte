@@ -7,6 +7,9 @@ import Control.Monad.State
 
 import Latte.Abs
 
+import C_Expressions
+import C_Utils
+
 
 ----------------------
 -- helper functions --
@@ -48,7 +51,7 @@ translateDeclaration declarationType declaration = do
 translateStatementList :: [Stmt] -> CMonad (CEnvironment, InstructionPrepend)
 translateStatementList statementList = do
     environment        <- ask
-    (_, generatedCode) <- foldFunction go (environment, id) statementList
+    (_, generatedCode) <- foldM foldFunction (environment, id) statementList
     return (environment, generatedCode)
     where
         foldFunction :: (CEnvironment, InstructionPrepend) -> Stmt -> CMonad (CEnvironment, InstructionPrepend)
@@ -101,8 +104,7 @@ translateStatement (Ass expressionL expressionR) = do
         expressionCodeL . instructionListAdd (PUSH $ RegisterOp EAX) . expressionCodeR . instructionListMerge [
             POP $ RegisterOp EDX,
             MOV (RegisterOp EAX) $ AddressOp 0 EDX
-        ]
-    )
+        ])
 
 translateStatement (Incr expression) = do
     expressionCode <- translateLValue expression
@@ -111,8 +113,7 @@ translateStatement (Incr expression) = do
         environment,
         expressionCode . instructionListMerge [
             UNARY_INSTRUCTION INC $ AddressOp 0 EAX
-        ]
-    )
+        ])
 
 translateStatement (Decr expression) = do
     expressionCode <- translateLValue expression
@@ -121,8 +122,7 @@ translateStatement (Decr expression) = do
         environment,
         expressionCode . instructionListMerge [
             UNARY_INSTRUCTION DEC $ AddressOp 0 EAX
-        ]
-    )
+        ])
 
 translateStatement (Ret expression) = do
     generatedCode <- translateExpression expression
@@ -132,8 +132,7 @@ translateStatement (Ret expression) = do
         environment,
         generatedCode . instructionListMerge [
             JUMP JMP $ FunctionLabel label
-        ]
-    )
+        ])
 
 translateStatement VRet = do
     environment <- ask
@@ -142,8 +141,7 @@ translateStatement VRet = do
         environment,
         instructionListMerge [
             JUMP JMP $ FunctionLabel label
-        ]
-    )
+        ])
 
 translateStatement (Cond expression statement) = do
     labelTrue <- getFreeLabel
@@ -151,14 +149,14 @@ translateStatement (Cond expression statement) = do
     expressionConditionCode <- translateCondition expression labelTrue labelNext
     statementTrueCode       <- translateStatementBlockWrap statement
     let resultCollector =
-        instructionListAdd (LABEL $ JumpLabel labelTrue) .
-        statementTrueCode .
-        instructionListAdd (LABEL $ JumpLabel labelNext)
+            instructionListAdd (LABEL $ JumpLabel labelTrue) .
+            statementTrueCode .
+            instructionListAdd (LABEL $ JumpLabel labelNext)
     environment <- ask
     return (
         environment,
         expressionConditionCode . resultCollector
-    )
+        )
 
 translateStatement (CondElse expression statementL statementR) = do
     labelTrue  <- getFreeLabel
@@ -168,17 +166,17 @@ translateStatement (CondElse expression statementL statementR) = do
     statementTrueCode       <- translateStatementBlockWrap statementL
     statementFalseCode      <- translateStatementBlockWrap statementR
     let resultCollector =
-        instructionListAdd (LABEL $ JumpLabel labelTrue) .
-        statementTrueCode .
-        instructionListAdd (JUMP JMP $ JumpLabel labelNext) .
-        instructionListAdd (LABEL $ JumpLabel labelFalse) .
-        statementFalseCode .
-        instructionListAdd (LABEL $ JumpLabel labelNext)
+            instructionListAdd (LABEL $ JumpLabel labelTrue) .
+            statementTrueCode .
+            instructionListAdd (JUMP JMP $ JumpLabel labelNext) .
+            instructionListAdd (LABEL $ JumpLabel labelFalse) .
+            statementFalseCode .
+            instructionListAdd (LABEL $ JumpLabel labelNext)
     environment <- ask
     return (
         environment,
         expressionConditionCode . resultCollector
-    )
+        )
 
 translateStatement (While expression statement) = do
     labelNext      <- getFreeLabel
@@ -187,17 +185,17 @@ translateStatement (While expression statement) = do
     expressionConditionCode <- translateCondition expression labelLoop labelNext
     statementLoopCode       <- translateStatementBlockWrap statement
     let resultCollector =
-        instructionListAdd (JUMP JMP $ JumpLabel labelCondition) .
-        instructionListAdd (LABEL $ JumpLabel labelLoop) .
-        statementLoopCode .
-        instructionListAdd (LABEL $ JumpLabel labelCondition) .
-        expressionConditionCode .
-        instructionListAdd (LABEL $ JumpLabel labelNext)
+            instructionListAdd (JUMP JMP $ JumpLabel labelCondition) .
+            instructionListAdd (LABEL $ JumpLabel labelLoop) .
+            statementLoopCode .
+            instructionListAdd (LABEL $ JumpLabel labelCondition) .
+            expressionConditionCode .
+            instructionListAdd (LABEL $ JumpLabel labelNext)
     environment <- ask
     return (
         environment,
         resultCollector
-    )
+        )
 
 translateStatement (For iteratorType identifier expression statement) =
     let iterator = Ident "__iterator"
@@ -212,7 +210,7 @@ translateStatement (For iteratorType identifier expression statement) =
                     statement,
                     Incr (EVar iterator)
                 ])
-        ]
+            ]
     in do
         expressionType <- getExpressionType expression
         translateStatement $ whileTransformate expressionType
