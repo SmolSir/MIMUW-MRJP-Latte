@@ -1,0 +1,9 @@
+int main() {
+    string a = "alamakota";
+    if ("ala" + "ma" + "kota" == a) {
+        printString("OK");
+    } else {
+        printString("ERROR");
+    }
+    return 0;
+}
