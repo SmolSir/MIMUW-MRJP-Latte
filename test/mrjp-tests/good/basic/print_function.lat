@@ -1,0 +1,16 @@
+int main()
+{
+  printString(f("Hello ")+g("Shushan "));
+  return 0;
+}
+
+
+string f(string s)
+{
+  return s;
+}
+
+string g(string s)
+{
+  return (s + ":)");
+}

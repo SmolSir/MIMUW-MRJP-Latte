@@ -1,4 +1,4 @@
-module Statements (statementCheck) where
+module TC_Statements (statementCheck) where
 
 import Data.Map as Map
 
@@ -7,8 +7,8 @@ import Control.Monad.Reader
 import Latte.Abs
 import Latte.Print
 
-import Utils
-import Expressions
+import TC_Utils
+import TC_Expressions
 
 
 ----------------------
@@ -16,12 +16,22 @@ import Expressions
 ----------------------
 conditionalCheck :: Expr -> [Stmt] -> TCMonad TCEnvironment
 conditionalCheck expression [statement] =
-    matchExpressionTypeMessage TBool expression >> statementCheck statement >> ask
+    matchExpressionTypeMessage TBool expression >>
+    statementBlockWrapCheck statement >>
+    ask
 
 conditionalCheck expression [statementTrue, statementFalse] =
-    matchExpressionTypeMessage TBool expression >> statementCheck statementTrue >> statementCheck statementFalse >> ask
+    matchExpressionTypeMessage TBool expression >>
+    statementBlockWrapCheck statementTrue >>
+    statementBlockWrapCheck statementFalse >>
+    ask
 
 conditionalCheck _ _ = throwTCMonad "Invalid conditional statement"
+
+statementBlockWrapCheck :: Stmt -> TCMonad TCEnvironment
+statementBlockWrapCheck statement@(BStmt _) = statementCheck statement
+
+statementBlockWrapCheck statement = statementCheck (BStmt (Block [statement]))
 
 -------------------------------
 -- statement check functions --
@@ -40,6 +50,7 @@ statementCheck (BStmt (Block statementList)) = do
             environment <- ask
             foldM foldFunction environment statementList
             where
+                foldFunction :: TCEnvironment -> Stmt -> TCMonad TCEnvironment
                 foldFunction env statement =
                     local (const env) $ statementCheck statement `throwAdditionalMessage` errorMessage
                     where
@@ -50,7 +61,8 @@ statementCheck (BStmt (Block statementList)) = do
                             "\n"
 
 statementCheck (Decl declarationType declarationList) = do
-    when (declarationType == Void) $ throwTCMonad "Cannot declare variables of type void"
+    when (voidTypeCheck declarationType) $ throwTCMonad "Cannot declare variables of type void"
+    classTypeExistsCheck declarationType
     environment <- ask
     foldM foldFunction environment declarationList
     where
@@ -70,14 +82,14 @@ statementCheck (Decl declarationType declarationList) = do
             let environmentAppendDeclared = Map.insert variable (tcType, scope env) (typeMap env)
             return $ env { typeMap = environmentAppendDeclared }
 
-statementCheck (Ass identifier expression) = do
-    tcType <- statementExpressionCheck (EVar identifier)
-    matchExpressionTypeMessage tcType expression
+statementCheck (Ass expressionL expressionR) = do
+    tcType <- statementExpressionCheck expressionL
+    matchExpressionTypeMessage tcType expressionR
     ask
 
-statementCheck (Incr identifier) = statementExpressionCheck (EVar identifier) >>= matchType [TInt] >> ask
+statementCheck (Incr expression) = statementExpressionCheck expression >>= matchType [TInt] >> ask
 
-statementCheck (Decr identifier) = statementExpressionCheck (EVar identifier) >>= matchType [TInt] >> ask
+statementCheck (Decr expression) = statementExpressionCheck expression >>= matchType [TInt] >> ask
 
 statementCheck (Ret expression) = matchReturnType =<< statementExpressionCheck expression
 
@@ -90,4 +102,19 @@ statementCheck (CondElse expression statementTrue statementFalse) =
 
 statementCheck (While expression statement) = conditionalCheck expression [statement]
 
-statementCheck (SExp expression) = statementExpressionCheck expression >> ask
+statementCheck (For iteratorType (Ident identifier) expression statement) = do
+    classTypeExistsCheck iteratorType
+    (TArr arrayTCType) <- matchExpressionTypeMessage metaArray expression
+    iteratorTCType     <- convertTypeToTCType iteratorType
+    matchType [iteratorTCType] arrayTCType
+    environment <- ask
+    let newTypeMap = Map.insert identifier (arrayTCType, scope environment + 1) (typeMap environment)
+    let statementBlockWrap = case statement of
+            (BStmt _) -> statement
+            _         -> BStmt (Block [statement])
+    local (\env -> env { typeMap = newTypeMap }) (statementCheck statementBlockWrap)
+    ask
+
+statementCheck (SExp expression) = do
+    _ <- statementExpressionCheck expression
+    ask

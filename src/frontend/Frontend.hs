@@ -7,9 +7,10 @@ import Control.Monad.Reader
 
 import Latte.Abs
 
-import Utils
-import Statements
-import Returns
+import TC_Classes
+import TC_Returns
+import TC_Statements
+import TC_Utils
 
 
 ----------------------
@@ -25,6 +26,25 @@ saveTopDefTypes environment topDef = local (const environment) $ saveTopDef topD
             environment <- ask
             return $ environment { typeMap = Map.insert identifier (tcType, 0) (typeMap environment) }
 
+        saveTopDef (ClsDef (Ident identifier) classExtends _) = do
+            classDefinition <- getMaybeClassDefinition identifier
+            case classDefinition of
+                Nothing -> do
+                    let extends = extendsUnwrap classExtends
+                    let classDefinition = ClassDefinition { extends = extends, memberMap = Map.empty }
+                    environment <- ask
+                    return $ environment { classMap = Map.insert identifier classDefinition (classMap environment) }
+                    where
+                        extendsUnwrap :: ClsExt -> Maybe Variable
+                        extendsUnwrap extends = case extends of
+                            NoExt -> Nothing
+                            Ext (Ident parentIdentifier) -> (Just parentIdentifier)
+                _ -> do
+                    throwTCMonad $
+                        "Duplicate class declaration: class `" ++
+                        identifier ++
+                        "` has already been declared"
+
 ---------------------
 -- check functions --
 ---------------------
@@ -38,7 +58,7 @@ mainPresenceCheck = do
             throwTCMonad $ "`main` function must be of type int, but was declared " ++ show functionType ++ "\n"
 
 functionDefinitionsCheck :: [TopDef] -> TCMonad TCEnvironment
-functionDefinitionsCheck  functionDefinitionList = do
+functionDefinitionsCheck functionDefinitionList = do
     environment <- ask
     foldM runFunctionDefinitionsCheck environment functionDefinitionList
     where
@@ -47,10 +67,11 @@ functionDefinitionsCheck  functionDefinitionList = do
             local (const env) $ functionDefinitionCheck functionDefinition
 
         functionDefinitionCheck :: TopDef -> TCMonad TCEnvironment
+        functionDefinitionCheck (ClsDef _ _ _) = ask
         functionDefinitionCheck (FnDef returnType (Ident identifier) argumentList block) = do
             tcReturnType    <- convertTypeToTCType returnType
             environment     <- ask
-            argumentTypeMap <- functionArgumentListCheck argumentList
+            argumentTypeMap <- functionArgumentListCheck argumentList `throwAdditionalMessage` errorMessage
             let env = environment {
                 typeMap            = Map.union argumentTypeMap (typeMap environment),
                 expectedReturnType = Just tcReturnType
@@ -60,34 +81,11 @@ functionDefinitionsCheck  functionDefinitionList = do
             where
                 errorMessage error = "inside function `" ++ identifier ++ "`\n" ++ error
 
-functionArgumentListCheck :: [Arg] -> TCMonad TypeMap
-functionArgumentListCheck argumentList = do
-    scope    <- asks scope
-    typeList <- mapM (
-        \(Arg argumentType (Ident identifier)) -> do
-            tcType <- convertTypeToTCType argumentType
-            if tcType == TVoid
-                then
-                    throwTCMonad $
-                    "Invalid function parameter of type void: `" ++
-                    identifier ++
-                    "`\n"
-                else
-                    return (identifier, (tcType, scope + 1))
-        )
-        argumentList
-    let typeMap = fromList typeList
-    if length typeMap == length typeList
-        then
-            return typeMap
-        else
-            throwTCMonad "Duplicate function's argument names"
-
 -------------------
 -- run functions --
 -------------------
 runStaticAnalysis (Program prog) =
-    runReaderT (parseTopDefList prog) $ TCEnvironment predefinedFunctionList 0 Nothing
+    runReaderT (parseTopDefList prog) $ TCEnvironment predefinedFunctionList Map.empty 0 Nothing
     where
         predefinedFunctionList :: Map.Map Variable (TCType, Scope)
         predefinedFunctionList = Map.fromList [
@@ -104,6 +102,8 @@ runStaticAnalysis (Program prog) =
             environment            <- ask
             environmentWithTopDefs <- foldM saveTopDefTypes environment prog
             local (const environmentWithTopDefs) mainPresenceCheck
-            local (const environmentWithTopDefs) (functionDefinitionsCheck prog)
+            environmentWithClassMembers <- local (const environmentWithTopDefs) (saveAllClassesMembers prog)
+            environmentWithClassDefinitions <- local (const environmentWithClassMembers) (classDefinitionsCheck prog)
+            local (const environmentWithClassDefinitions) (functionDefinitionsCheck prog)
             runReturnsCheck prog
             ask
